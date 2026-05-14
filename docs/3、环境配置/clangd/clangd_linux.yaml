@@ -1,0 +1,114 @@
+# ==============================================================================
+# 项目 Clangd 配置文件 (当前版本: Linux 专用)
+#
+# 【跨平台开发注意事项】
+# 1. Linux 下 clangd 可以通过 --query-driver 自动向 arm-none-eabi-gcc 查询
+#    系统头文件路径 (stdio.h 等)，无需手动硬编码绝对路径。
+# 2. Windows 存在缺陷，无法自动获取系统库，需另行手动指定路径，见 Windows 版配置。
+# 3. 请确保本项目 .gitignore 已包含 .clangd，防止不同平台的配置互相覆盖。
+#
+# 【Linux 工具链常见安装路径参考】
+#   apt 安装:    /usr/bin/arm-none-eabi-gcc
+#   手动解压:    /opt/arm-gnu-toolchain-*/bin/arm-none-eabi-gcc
+#   自定义路径:  按实际安装位置修改下方 --query-driver 的路径 glob
+# ==============================================================================
+
+CompileFlags:
+  # 指定 compile_commands.json 所在的目录（通常是 CMake 生成的 build 目录）
+  CompilationDatabase: build
+
+  Add:
+    # --- 1. 基础编译参数 ---
+    - -xc                           # 强制作为 C 语言文件解析 (C++ 则改为 -xc++)
+    - --target=thumbv6m-none-eabi   # Cortex-M0+ 精确 target（FM33LG04X / FM33LE026）
+                                    # M3  → thumbv7m-none-eabi
+                                    # M4F → thumbv7em-none-eabihf
+    - -std=gnu11                    # 显式指定 C 标准，补回被 Remove 删掉的 -std=*
+                                    # 与 CMakeLists.txt 中 CMAKE_C_STANDARD 保持一致
+
+    # --- 2. 【Linux 核心配置】ARM GCC 系统头文件路径 ---
+    # ⚠️ 注意: --query-driver 是 clangd 服务器参数，不能放在 CompileFlags.Add 中
+    #    它应通过 VS Code settings.json 的 clangd.arguments 传递（已配置）。
+    #    但为确保可靠性，这里直接指定 ARM GCC 系统头文件路径（与 Windows 版同理）。
+    # 📌 路径来源: arm-none-eabi-gcc -E -v （Debian apt 安装路径）
+    - "-isystem/usr/lib/arm-none-eabi/include"
+    - "-isystem/usr/lib/gcc/arm-none-eabi/14.2.1/include"
+    - "-isystem/usr/lib/gcc/arm-none-eabi/14.2.1/include-fixed"
+
+    # --- 3. 忽略不影响代码逻辑的警告 ---
+    - -Wno-empty-translation-unit   # 忽略"翻译单元为空"警告 (通常因 #ifdef 屏蔽整个文件引起)
+    - -Wno-unknown-warning-option   # 忽略 clangd 不认识的 GCC 特定警告选项
+
+    # --- 4. 项目级全局宏定义 ---
+    - -DFM33LG0XX                   # 指定当前使用的芯片型号
+    - -DUSE_HAL_DRIVER              # 启用 HAL/固件库驱动宏
+
+    # --- 5. 项目自身的头文件包含路径 ---
+    # 物理目录约定 (2026-05 重构后):
+    #   App/        应用层: main.c / app_config.h / Test_List.h / Test/
+    #   Bsp/        板级支持: GPIO/LED_CTRL/WTD/time/ina219/dac/board_pins/elog_*/ADC_CHK + Peripheral/uart
+    #   Components/ 跨项目可复用模块 (TimeManager / LedIndicator / ValveCtrl / Protocol / Utility / FlashDB / EasyLogger)
+    #   Components/Protocol/Legacy/  已弃用的拼音协议 (@deprecated, 仅过渡期保留)
+    - "-IDrivers/CMSIS/Device/FM/FM33xx/Include"
+    - "-IDrivers/FM33LG0xx_FL_Driver/Inc"
+    - "-IApp"
+    - "-IApp/Test"
+    - "-IApp/Test/NB_18_DiaphragmGas_Test"
+    - "-IApp/Test/Domestic_water_meter_Test"
+    - "-IBsp"
+    - "-IBsp/Peripheral/uart"
+    - "-IMF-config/Inc"
+    - "-IComponents"
+    - "-IComponents/Protocol"
+    - "-IComponents/Protocol/Legacy"
+    - "-IComponents/TimeManager"
+    - "-IComponents/LedIndicator"
+    - "-IComponents/ValveCtrl"
+    - "-IComponents/Utility"
+    - "-IComponents/EasyLogger/easylogger/inc"
+
+    # ==========================================================================
+    # --- 6. 【Windows 专用配置区】(当前在 Linux 下，保持注释状态) ---
+    # Windows 无法使用 --query-driver，需手动硬编码工具链头文件绝对路径。
+    # ==========================================================================
+    # - "-ID:/Work/Tools/arm-gnu-toolchain-.../arm-none-eabi/include"
+    # - "-ID:/Work/Tools/arm-gnu-toolchain-.../lib/gcc/arm-none-eabi/14.x.x/include"
+
+  Remove:
+    # 移除 GCC 特有的、而 Clang 不支持的底层硬件/链接参数
+    # 如果不移除，clangd 顶部会一直报 drv_unknown_argument 警告
+    - -mcpu=*       # 移除特定 CPU 指令集优化参数（由 --target 接管）
+    - -mthumb       # 移除 thumb 指令集参数
+    - -mfloat-abi=* # 移除浮点 ABI 参数
+    - -mfpu=*       # 移除浮点单元参数（部分工具链会生成）
+    - -specs=*      # 移除 GCC 链接规范参数 (如 nano.specs)
+    - -mno-*        # 移除类似 -mno-unaligned-access 等参数
+    - -std=*        # 移除 cmake 生成的标准指定，由上方 Add 中的 -std=gnu11 接管
+
+Diagnostics:
+  # include-cleaner 诊断：遵循 IWYU（库什么用什么，不依赖间接包含）
+  # 聊合头请在其内部使用 // IWYU pragma: export
+  # 条件编译盲区使用处请加 // IWYU pragma: keep
+  # 不要为了闭嘴警告而禁用这些诊断
+
+  # 强制屏蔽 clangd 报错类别
+  Suppress:
+    - drv_unknown_argument    # 屏蔽"未知编译器参数"的警告
+    - unknown_warning_option  # 屏蔽"未知的警告选项"
+
+# ==============================================================================
+# Clangd 体验增强配置
+# ==============================================================================
+
+Hover:
+  ShowAKA: true  # uint32_t 悬停时同时显示原始类型 unsigned int
+                 # 利于理解 HAL 层 typedef 别名的实际底层类型
+
+# InlayHints:
+#   Enabled: Yes
+#   ParameterNames: Yes   # 函数调用处显示参数名，如 delay(/* ms = */ 100)
+#   DeducedTypes: Yes     # auto 变量处显示推导出的实际类型
+
+# Format:
+#   # 格式化选项通常配合项目根目录的 .clang-format 文件使用
+#   # Disable: False

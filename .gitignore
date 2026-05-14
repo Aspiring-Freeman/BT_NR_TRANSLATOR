@@ -1,0 +1,19 @@
+# ===== 编译输出 =====
+build/
+build_fast/
+*.elf
+*.bin
+*.hex
+*.map
+*.o
+*.a
+
+# ===== IDE / 工具 =====
+#.vscode/settings.json  不屏蔽，因为里面包含了 clangd 的配置，屏蔽后会导致代码提示失效
+
+# ===== 平台相关配置（不入库，各机器自行维护，参考 docs/环境配置/ 目录）=====
+.clangd
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db

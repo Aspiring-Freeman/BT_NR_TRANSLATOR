@@ -1,0 +1,72 @@
+{
+  "files.associations": {
+    "*.pyc": "python-bytecode",
+    "tongxin_xieyi_ctrl.h": "c",
+    "led_ctrl.h": "c",
+    "adc_chk.h": "c",
+    "main.h": "c",
+    "typeinfo": "c",
+    "*.h": "c",
+    "*.c": "c",
+    "*.s": "asm",
+    "*.ld": "linkerscript",
+    "*.lds": "linkerscript",
+    "*.bak": "c",
+    "compare": "c",
+    "coroutine": "c",
+    "string_view": "c",
+    "rope": "c",
+    "regex": "c",
+    "array": "c",
+    "string": "c",
+    "ranges": "c",
+    "span": "c"
+  },
+  // === clangd 为主引擎，禁用 cpptools 的 IntelliSense 避免冲突 ===
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "C_Cpp.errorSquiggles": "disabled",
+  "C_Cpp.autocomplete": "disabled",
+  // clangd 配置
+  "clangd.arguments": [
+    "--query-driver=/usr/bin/arm-none-eabi-*,/usr/local/bin/arm-none-eabi-*,C:/Program Files*/GNU Arm Embedded Toolchain/*/bin/arm-none-eabi-*",
+    "--header-insertion=never",
+    "--completion-style=detailed",
+    "--background-index"
+  ],
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  // Use clang-format for C/C++ and enable format on save
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "xaver.clang-format",
+  "C_Cpp.formatting": "clangFormat",
+  // Make sure C/C++ files use clang-format as default formatter explicitly
+  "[c]": {
+    "editor.defaultFormatter": "xaver.clang-format"
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "xaver.clang-format"
+  },
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "cortex-debug.enableTelemetry": false,
+  "cortex-debug.showRTOS": false,
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.configureOnOpen": false,
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "C_Cpp.default.defines": [
+    "DEBUG",
+    "USE_HAL_DRIVER",
+    "FM33LG048",
+    "FM33LG0XX"
+  ],
+  "C_Cpp.default.compilerPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gcc.exe",
+  "C_Cpp.default.cStandard": "gnu11",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.default.intelliSenseMode": "gcc-arm",
+  "cortex-debug.armToolchainPath": "/usr/bin",
+  "cortex-debug.gdbPath": "/usr/bin/gdb-multiarch",
+  "cortex-debug.variableUseNaturalFormat": false,
+  "window.title": "${dirty}${activeEditorShort}${separator}BT_PassThroughFT${separator}${rootName}",
+  "idf.pythonInstallPath": "/usr/bin/python3"
+}

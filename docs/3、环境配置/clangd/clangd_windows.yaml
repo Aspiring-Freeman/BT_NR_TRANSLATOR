@@ -1,0 +1,83 @@
+# ==============================================================================
+# 项目 Clangd 配置文件 (当前版本: Windows 专用)
+#
+# 【使用方法】
+# 1. 将此文件复制到项目根目录并重命名为 .clangd
+# 2. 根据实际安装路径修改下方 ARM GCC 头文件路径
+# 3. 重启 VS Code 或执行 "clangd: Restart language server"
+#
+# 【路径获取方法】
+# 在终端执行: arm-none-eabi-gcc -E -v -xc nul 2>&1 | findstr "include"
+# ==============================================================================
+
+CompileFlags:
+  # 指定 compile_commands.json 所在的目录（通常是 CMake 生成的 build 目录）
+  CompilationDatabase: build
+
+  Add:
+    # --- 1. 基础编译参数 ---
+    - -xc                           # 强制作为 C 语言文件解析 (C++ 则改为 -xc++)
+    - --target=thumbv6m-none-eabi   # Cortex-M0+ 精确 target（FM33LG04X / FM33LE026）
+    - -std=gnu11                    # 显式指定 C 标准，与 CMakeLists.txt 保持一致
+
+    # --- 2. 【Windows 核心配置】ARM GCC 系统头文件路径 ---
+    # ⚠️ Windows 下 clangd 无法通过 --query-driver 自动获取系统头文件
+    #    必须手动指定 ARM GCC 安装路径下的 include 目录
+    # 📌 请根据实际安装路径修改以下三行:
+    - "-isystemC:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/arm-none-eabi/include"
+    - "-isystemC:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/lib/gcc/arm-none-eabi/10.3.1/include"
+    - "-isystemC:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/lib/gcc/arm-none-eabi/10.3.1/include-fixed"
+
+    # --- 3. 忽略不影响代码逻辑的警告 ---
+    - -Wno-empty-translation-unit   # 忽略"翻译单元为空"警告
+    - -Wno-unknown-warning-option   # 忽略 clangd 不认识的 GCC 特定警告选项
+
+    # --- 4. 项目级全局宏定义 ---
+    - -DFM33LG0XX                   # 指定当前使用的芯片型号
+    - -DUSE_HAL_DRIVER              # 启用 HAL/固件库驱动宏
+
+    # --- 5. 项目自身的头文件包含路径 ---
+    # 物理目录约定 (2026-05 重构后):
+    #   App/        应用层: main.c / app_config.h / Test_List.h / Test/
+    #   Bsp/        板级支持: GPIO/LED_CTRL/WTD/time/ina219/dac/board_pins/elog_*/ADC_CHK + Peripheral/uart
+    #   Components/ 跨项目可复用模块 (TimeManager / LedIndicator / ValveCtrl / Protocol / Utility / FlashDB / EasyLogger)
+    #   Components/Protocol/Legacy/  已弃用的拼音协议 (@deprecated, 仅过渡期保留)
+    - "-IDrivers/CMSIS/Device/FM/FM33xx/Include"
+    - "-IDrivers/FM33LG0xx_FL_Driver/Inc"
+    - "-IApp"
+    - "-IApp/Test"
+    - "-IApp/Test/NB_18_DiaphragmGas_Test"
+    - "-IApp/Test/Domestic_water_meter_Test"
+    - "-IBsp"
+    - "-IBsp/Peripheral/uart"
+    - "-IMF-config/Inc"
+    - "-IComponents"
+    - "-IComponents/Protocol"
+    - "-IComponents/Protocol/Legacy"
+    - "-IComponents/TimeManager"
+    - "-IComponents/LedIndicator"
+    - "-IComponents/ValveCtrl"
+    - "-IComponents/Utility"
+    - "-IComponents/EasyLogger/easylogger/inc"
+
+  Remove:
+    - -mcpu=*
+    - -mthumb
+    - -mfloat-abi=*
+    - -mfpu=*
+    - -specs=*
+    - -mno-*
+    - -std=*
+
+Diagnostics:
+  # include-cleaner 诊断：遵循 IWYU（库什么用什么，不依赖间接包含）
+  # 聊合头请在其内部使用 // IWYU pragma: export
+  # 条件编译盲区使用处请加 // IWYU pragma: keep
+  # 不要为了闭嘴警告而禁用这些诊断
+
+  Suppress:
+    - drv_unknown_argument
+    - unknown_warning_option
+
+Hover:
+  ShowAKA: true

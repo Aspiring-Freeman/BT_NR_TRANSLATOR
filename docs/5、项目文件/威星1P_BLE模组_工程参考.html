@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>威星 1P BLE 模组 · 工程实施参考</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F0E6;
+  --paper-edge:#EAE3D2;
+  --ink:#1A1612;
+  --ink-soft:#3C342B;
+  --ink-mute:#6E6253;
+  --rule:#2C231C;
+  --red:#A8351F;          /* structural / brand */
+  --red-soft:#D45B3F;
+  --green:#2E5839;        /* correct */
+  --green-soft:#5C8265;
+  --burnt:#B85A1A;        /* wrong / caution */
+  --burnt-soft:#D88A4A;
+  --navy:#1E3A5F;         /* info / cool */
+  --navy-soft:#3A6090;
+  --gold:#9B7B1F;         /* wakeup highlight */
+
+  /* protocol field colors — soft pastels */
+  --f-head:#E8C9A8;
+  --f-addr:#D9C4E0;
+  --f-type:#C9DCC2;
+  --f-len:#F0CDC2;
+  --f-tagL:#F2D8B0;
+  --f-tagH:#E8C99B;
+  --f-data:#FFF1C9;
+  --f-check:#CDC9A2;
+  --f-wake:#E8D584;
+
+  --shadow-soft:0 1px 0 rgba(40,28,20,.06), 0 4px 14px -8px rgba(40,28,20,.18);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:32px}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Newsreader','Source Han Serif SC','Noto Serif CJK SC','Songti SC',serif;
+  font-size:17px;
+  line-height:1.65;
+  font-feature-settings:"ss01","cv11";
+  background-image:
+    radial-gradient(ellipse at top, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(ellipse at bottom, rgba(180,150,100,.05), transparent 60%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* subtle paper grain via SVG noise */
+body::before{
+  content:"";
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.15 0 0 0 0 0.12 0 0 0 0 0.08 0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  mix-blend-mode:multiply;
+  opacity:.55;
+}
+
+/* HEADER ===================================================== */
+header.masthead{
+  position:relative;
+  padding:80px 6vw 60px;
+  border-bottom:1px solid var(--rule);
+  background:linear-gradient(180deg, transparent 0%, rgba(168,53,31,.04) 100%);
+  z-index:1;
+}
+.masthead-rule{
+  display:flex;align-items:center;gap:16px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;text-transform:uppercase;letter-spacing:.18em;
+  color:var(--ink-mute);
+  margin-bottom:36px;
+}
+.masthead-rule::before,.masthead-rule::after{
+  content:"";flex:1;height:1px;background:var(--rule);opacity:.4;
+}
+.masthead h1{
+  font-family:'Fraunces',serif;
+  font-weight:300;
+  font-variation-settings:"opsz" 144,"SOFT" 30;
+  font-size:clamp(48px,8vw,104px);
+  line-height:.95;
+  letter-spacing:-.02em;
+  color:var(--ink);
+  margin-bottom:24px;
+}
+.masthead h1 .accent{
+  color:var(--red);
+  font-style:italic;
+  font-weight:400;
+  font-variation-settings:"opsz" 144,"SOFT" 60;
+}
+.masthead .subtitle{
+  font-family:'Newsreader',serif;
+  font-style:italic;
+  font-size:clamp(18px,2vw,22px);
+  color:var(--ink-soft);
+  max-width:680px;
+  margin-bottom:32px;
+}
+.masthead .meta{
+  display:flex;flex-wrap:wrap;gap:32px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  color:var(--ink-mute);
+}
+.masthead .meta span strong{
+  display:block;
+  color:var(--ink);
+  font-weight:500;
+  margin-top:4px;
+  font-family:'Newsreader',serif;
+  font-style:italic;
+  font-size:15px;
+}
+
+/* TOC ======================================================== */
+nav.toc{
+  position:sticky;top:0;
+  background:var(--paper);
+  border-bottom:1px solid rgba(44,35,28,.15);
+  padding:14px 6vw;
+  z-index:50;
+  backdrop-filter:blur(8px);
+  background:rgba(244,240,230,.92);
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+}
+nav.toc ol{
+  display:flex;gap:28px;list-style:none;flex-wrap:wrap;
+  counter-reset:toc;
+}
+nav.toc li{counter-increment:toc;display:flex;align-items:baseline;gap:6px}
+nav.toc li::before{
+  content:counter(toc,decimal-leading-zero);
+  color:var(--red);font-weight:700;
+}
+nav.toc a{color:var(--ink-soft);text-decoration:none;transition:color .2s}
+nav.toc a:hover{color:var(--red)}
+
+/* MAIN ======================================================= */
+main{position:relative;z-index:1;padding:0 6vw 120px}
+
+section{padding:88px 0 24px;border-bottom:1px dashed rgba(44,35,28,.2)}
+section:last-of-type{border-bottom:none}
+
+.section-head{
+  display:grid;
+  grid-template-columns:120px 1fr;
+  gap:32px;
+  margin-bottom:48px;
+  align-items:start;
+}
+.section-num{
+  font-family:'Fraunces',serif;
+  font-weight:200;
+  font-variation-settings:"opsz" 144;
+  font-size:88px;
+  line-height:.9;
+  color:var(--red);
+  font-style:italic;
+}
+.section-title{
+  font-family:'Fraunces',serif;
+  font-weight:400;
+  font-variation-settings:"opsz" 96,"SOFT" 50;
+  font-size:clamp(32px,4vw,48px);
+  line-height:1.1;
+  letter-spacing:-.01em;
+  margin-bottom:14px;
+}
+.section-kicker{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  margin-bottom:8px;
+}
+.section-lede{
+  font-family:'Newsreader',serif;
+  font-style:italic;
+  font-size:19px;
+  color:var(--ink-soft);
+  max-width:640px;
+}
+
+.body-grid{
+  display:grid;
+  grid-template-columns:120px 1fr;
+  gap:32px;
+}
+.body-grid > .body{
+  max-width:780px;
+}
+.marginalia{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  line-height:1.5;
+  padding-top:6px;
+}
+
+p{margin-bottom:18px;max-width:68ch}
+strong{font-weight:600;color:var(--ink)}
+em{font-style:italic}
+a{color:var(--red);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+code{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.85em;
+  background:rgba(168,53,31,.06);
+  padding:1px 5px;
+  border-radius:2px;
+  color:var(--red);
+}
+
+h3{
+  font-family:'Fraunces',serif;
+  font-weight:500;
+  font-variation-settings:"opsz" 72;
+  font-size:24px;
+  letter-spacing:-.005em;
+  margin:36px 0 14px;
+  color:var(--ink);
+}
+h3 .num{
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  font-weight:500;
+  color:var(--red);
+  margin-right:10px;
+  vertical-align:middle;
+  letter-spacing:.05em;
+}
+
+/* OVERVIEW CARDS ============================================ */
+.spec-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:1px;
+  background:var(--rule);
+  border:1px solid var(--rule);
+  margin:24px 0 8px;
+}
+.spec-grid div{
+  background:var(--paper);
+  padding:20px 22px;
+}
+.spec-grid .label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  margin-bottom:8px;
+}
+.spec-grid .value{
+  font-family:'Fraunces',serif;
+  font-weight:500;
+  font-size:22px;
+  font-variation-settings:"opsz" 48;
+  color:var(--ink);
+  line-height:1.2;
+}
+.spec-grid .value small{
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  font-weight:400;
+  color:var(--ink-mute);
+  display:block;
+  margin-top:4px;
+  letter-spacing:.02em;
+}
+
+/* PIN TABLE ================================================== */
+.pin-table{
+  width:100%;
+  border-collapse:collapse;
+  margin:18px 0 8px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+}
+.pin-table th{
+  text-align:left;
+  font-weight:500;
+  font-size:10px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  padding:10px 14px 10px 0;
+  border-bottom:1px solid var(--rule);
+}
+.pin-table td{
+  padding:12px 14px 12px 0;
+  border-bottom:1px solid rgba(44,35,28,.1);
+  vertical-align:top;
+}
+.pin-table td:first-child{color:var(--red);font-weight:500}
+.pin-table td:last-child{
+  font-family:'Newsreader',serif;
+  font-style:italic;
+  color:var(--ink-soft);
+}
+
+/* FRAME ANATOMY ============================================== */
+.frame-anatomy{
+  margin:36px 0 24px;
+  padding:36px 28px 28px;
+  background:linear-gradient(180deg, rgba(255,255,255,.4), transparent);
+  border:1px solid var(--rule);
+  border-radius:2px;
+  position:relative;
+}
+.frame-anatomy::before{
+  content:"FRAME ANATOMY";
+  position:absolute;top:-9px;left:24px;
+  background:var(--paper);
+  padding:0 10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:.18em;
+  color:var(--red);
+}
+.frame{
+  display:flex;
+  flex-wrap:wrap;
+  gap:2px;
+  font-family:'JetBrains Mono',monospace;
+}
+.byte{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-width:48px;
+  flex:1;
+}
+.byte .hex{
+  width:100%;
+  padding:10px 4px;
+  text-align:center;
+  font-size:14px;
+  font-weight:700;
+  color:var(--ink);
+  border:1px solid rgba(44,35,28,.2);
+}
+.byte .label{
+  margin-top:6px;
+  font-size:9px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  text-align:center;
+  line-height:1.3;
+}
+.byte.head .hex{background:var(--f-head)}
+.byte.addr .hex{background:var(--f-addr)}
+.byte.start .hex{background:var(--f-head)}
+.byte.type .hex{background:var(--f-type)}
+.byte.len .hex{background:var(--f-len)}
+.byte.tagL .hex{background:var(--f-tagL)}
+.byte.tagH .hex{background:var(--f-tagH)}
+.byte.data .hex{background:var(--f-data)}
+.byte.check .hex{background:var(--f-check)}
+.byte.tail .hex{background:var(--f-head)}
+.byte.wake .hex{background:var(--f-wake);color:var(--ink)}
+
+.frame-legend{
+  margin-top:24px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:8px 24px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  color:var(--ink-soft);
+}
+.frame-legend div{display:flex;align-items:center;gap:8px}
+.frame-legend .swatch{
+  width:14px;height:14px;
+  border:1px solid rgba(44,35,28,.3);
+  flex-shrink:0;
+}
+
+/* SEQUENCE DIAGRAM ========================================== */
+.sequence{
+  margin:36px 0;
+  background:linear-gradient(180deg, rgba(255,255,255,.3), transparent);
+  border:1px solid var(--rule);
+  padding:32px 28px;
+  position:relative;
+}
+.sequence::before{
+  content:"上电握手 / POWER-UP HANDSHAKE";
+  position:absolute;top:-9px;left:24px;
+  background:var(--paper);
+  padding:0 10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:.18em;
+  color:var(--red);
+}
+.seq-header{
+  display:grid;
+  grid-template-columns:80px 1fr 1fr;
+  gap:16px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  padding-bottom:14px;
+  margin-bottom:14px;
+  border-bottom:1px solid rgba(44,35,28,.2);
+}
+.seq-header > div:nth-child(2){text-align:center}
+.seq-header > div:nth-child(3){text-align:center}
+
+.seq-row{
+  display:grid;
+  grid-template-columns:80px 1fr 1fr;
+  gap:16px;
+  align-items:center;
+  padding:10px 0;
+  position:relative;
+}
+.seq-time{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  color:var(--ink-mute);
+  letter-spacing:.02em;
+}
+.seq-msg{
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  padding:10px 14px;
+  background:rgba(255,255,255,.5);
+  border:1px solid rgba(44,35,28,.2);
+  border-radius:2px;
+  position:relative;
+}
+.seq-msg .annot{
+  display:block;
+  font-family:'Newsreader',serif;
+  font-style:italic;
+  font-size:13px;
+  color:var(--ink-soft);
+  margin-top:4px;
+  letter-spacing:0;
+}
+.seq-msg.from-mcu{grid-column:2;text-align:right}
+.seq-msg.from-mod{grid-column:3}
+.seq-msg.from-mcu::after{
+  content:"→";
+  position:absolute;
+  right:-20px;top:50%;
+  transform:translateY(-50%);
+  font-size:18px;
+  color:var(--green);
+}
+.seq-msg.from-mod::before{
+  content:"←";
+  position:absolute;
+  left:-20px;top:50%;
+  transform:translateY(-50%);
+  font-size:18px;
+  color:var(--navy);
+}
+.seq-msg.from-mod{background:rgba(30,58,95,.05);border-color:rgba(30,58,95,.25)}
+.seq-msg.from-mcu{background:rgba(46,88,57,.05);border-color:rgba(46,88,57,.25)}
+.seq-msg.broadcast{
+  grid-column:2 / span 2;
+  text-align:center;
+  background:rgba(155,123,31,.08);
+  border-color:rgba(155,123,31,.35);
+  border-style:dashed;
+  color:var(--gold);
+  font-style:italic;
+  font-family:'Newsreader',serif;
+  font-size:13px;
+}
+.seq-note{
+  grid-column:2 / span 2;
+  font-family:'Newsreader',serif;
+  font-style:italic;
+  font-size:13px;
+  color:var(--ink-mute);
+  padding:6px 0 6px 12px;
+  border-left:2px solid rgba(168,53,31,.3);
+  margin:4px 0;
+}
+.seq-retry{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  color:var(--red);
+  margin-left:8px;
+  background:rgba(168,53,31,.08);
+  padding:1px 6px;
+  border-radius:8px;
+  letter-spacing:.05em;
+}
+
+/* COMMAND TABLE ============================================ */
+.cmd-table{
+  width:100%;
+  border-collapse:collapse;
+  margin:24px 0;
+  font-size:14px;
+}
+.cmd-table thead th{
+  text-align:left;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  font-weight:500;
+  padding:12px 16px 12px 0;
+  border-bottom:2px solid var(--rule);
+}
+.cmd-table tbody td{
+  padding:14px 16px 14px 0;
+  border-bottom:1px solid rgba(44,35,28,.12);
+  vertical-align:top;
+}
+.cmd-table tbody tr:hover{background:rgba(168,53,31,.03)}
+.cmd-table .tag{
+  font-family:'JetBrains Mono',monospace;
+  font-weight:600;
+  color:var(--red);
+  white-space:nowrap;
+}
+.cmd-table .desc{
+  font-family:'Newsreader',serif;
+}
+.cmd-table .kind{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  color:var(--ink-mute);
+  letter-spacing:.05em;
+}
+.cmd-table .kind .tag-pill{
+  display:inline-block;
+  padding:2px 7px;
+  background:rgba(30,58,95,.08);
+  color:var(--navy);
+  border-radius:8px;
+  font-size:10px;
+  letter-spacing:.1em;
+  margin-right:4px;
+}
+.cmd-table .kind .tag-pill.req{background:rgba(168,53,31,.08);color:var(--red)}
+.cmd-table .kind .tag-pill.set{background:rgba(46,88,57,.08);color:var(--green)}
+.cmd-table .kind .tag-pill.get{background:rgba(30,58,95,.08);color:var(--navy)}
+
+/* TRANSCRIPT / EXAMPLES ===================================== */
+.transcript{
+  background:rgba(44,35,28,.04);
+  border-left:3px solid var(--rule);
+  padding:20px 22px;
+  margin:18px 0 24px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  line-height:1.7;
+  overflow-x:auto;
+}
+.transcript .line{display:block;white-space:nowrap}
+.transcript .arrow-tx{color:var(--green);font-weight:600}
+.transcript .arrow-rx{color:var(--navy);font-weight:600}
+.transcript .hex-byte{color:var(--ink)}
+.transcript .wake{color:var(--gold);font-weight:700}
+.transcript .gloss{
+  display:block;
+  font-family:'Newsreader',serif;
+  font-style:italic;
+  font-size:13px;
+  color:var(--ink-mute);
+  margin-left:24px;
+  margin-top:2px;
+  margin-bottom:8px;
+  white-space:normal;
+}
+
+/* WRONG / RIGHT compare ===================================== */
+.compare{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  margin:24px 0;
+}
+@media(max-width:780px){.compare{grid-template-columns:1fr}}
+.panel{
+  border:1px solid;
+  padding:22px 22px 24px;
+  position:relative;
+  background:rgba(255,255,255,.4);
+}
+.panel.wrong{border-color:var(--burnt)}
+.panel.right{border-color:var(--green)}
+.panel-label{
+  position:absolute;top:-11px;left:18px;
+  background:var(--paper);
+  padding:0 10px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:.18em;
+}
+.panel.wrong .panel-label{color:var(--burnt)}
+.panel.right .panel-label{color:var(--green)}
+.panel h4{
+  font-family:'Fraunces',serif;
+  font-weight:500;
+  font-size:18px;
+  margin-bottom:8px;
+}
+.panel.wrong h4{color:var(--burnt)}
+.panel.right h4{color:var(--green)}
+.panel .mini-hex{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  background:rgba(0,0,0,.04);
+  padding:10px 12px;
+  margin:10px 0;
+  word-break:break-all;
+  line-height:1.6;
+}
+.panel p{font-size:14px;margin-bottom:10px}
+
+/* CALLOUT =================================================== */
+.callout{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:18px;
+  margin:24px 0;
+  padding:18px 22px;
+  background:rgba(168,53,31,.05);
+  border-left:3px solid var(--red);
+}
+.callout.note{background:rgba(30,58,95,.05);border-color:var(--navy)}
+.callout.tip{background:rgba(46,88,57,.05);border-color:var(--green)}
+.callout-icon{
+  font-family:'Fraunces',serif;
+  font-size:32px;
+  font-weight:300;
+  font-style:italic;
+  line-height:1;
+  color:var(--red);
+}
+.callout.note .callout-icon{color:var(--navy)}
+.callout.tip .callout-icon{color:var(--green)}
+.callout p{margin-bottom:6px;font-size:15px}
+.callout p:last-child{margin-bottom:0}
+
+/* CHECKLIST ================================================= */
+.checklist{
+  list-style:none;
+  margin:18px 0;
+  padding:0;
+}
+.checklist li{
+  position:relative;
+  padding:12px 0 12px 36px;
+  border-bottom:1px solid rgba(44,35,28,.1);
+  font-family:'Newsreader',serif;
+  font-size:16px;
+}
+.checklist li::before{
+  content:"";
+  position:absolute;left:0;top:18px;
+  width:16px;height:16px;
+  border:1.5px solid var(--rule);
+  border-radius:1px;
+}
+.checklist li::after{
+  content:"✓";
+  position:absolute;left:3px;top:11px;
+  font-family:'Fraunces',serif;
+  font-size:18px;
+  color:var(--green);
+  opacity:0;
+  transition:opacity .15s;
+}
+.checklist li:hover::after{opacity:.4}
+.checklist li code{
+  font-size:.9em;
+  background:rgba(168,53,31,.06);
+  padding:1px 5px;
+}
+
+/* FOOTER ==================================================== */
+footer{
+  border-top:1px solid var(--rule);
+  margin-top:80px;
+  padding:48px 6vw 60px;
+  text-align:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  background:rgba(168,53,31,.03);
+}
+footer .ornament{
+  font-family:'Fraunces',serif;
+  font-style:italic;
+  font-size:24px;
+  color:var(--red);
+  margin-bottom:16px;
+  letter-spacing:0;
+  text-transform:none;
+}
+
+/* RESPONSIVE ================================================= */
+@media(max-width:780px){
+  .section-head, .body-grid{grid-template-columns:1fr}
+  .marginalia{display:none}
+  .section-num{font-size:64px}
+  nav.toc ol{gap:14px;font-size:10px}
+  .byte{min-width:38px}
+  .byte .hex{font-size:12px;padding:8px 2px}
+  .seq-msg.from-mcu{grid-column:2 / span 2;text-align:left}
+  .seq-msg.from-mod{grid-column:2 / span 2}
+  .seq-msg.from-mcu::after,.seq-msg.from-mod::before{display:none}
+  .seq-header > div:nth-child(2),.seq-header > div:nth-child(3){text-align:left}
+}
+
+/* PRINT ===================================================== */
+@media print{
+  body::before{display:none}
+  nav.toc{display:none}
+  section{break-inside:avoid;border:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============= HEADER ============= -->
+<header class="masthead">
+  <div class="masthead-rule">
+    <span>Field Notes · 工程实施手册</span>
+  </div>
+  <h1>威星 <span class="accent">1P</span><br>透传模组实战</h1>
+  <p class="subtitle">从串口握手到蓝牙广播，一份给做表计 MCU 工程师的现场参考——配置、使用、调试三段全收录。</p>
+  <div class="meta">
+    <span>固件版本<strong>V1.20.x 通用表计</strong></span>
+    <span>适配硬件<strong>DB809 / BB810</strong></span>
+    <span>协议<strong>FC/FB 私有透传</strong></span>
+    <span>整理日期<strong>2026 · 05</strong></span>
+  </div>
+</header>
+
+<!-- ============= TOC ============= -->
+<nav class="toc">
+  <ol>
+    <li><a href="#overview">概览</a></li>
+    <li><a href="#hardware">硬件 & 串口</a></li>
+    <li><a href="#protocol">协议帧</a></li>
+    <li><a href="#handshake">上电握手</a></li>
+    <li><a href="#commands">命令速查</a></li>
+    <li><a href="#operations">关键操作</a></li>
+    <li><a href="#debugging">调试经验</a></li>
+    <li><a href="#checklist">联调清单</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ============= 1. OVERVIEW ============= -->
+<section id="overview">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div>
+      <div class="section-kicker">Section One · 概览</div>
+      <h2 class="section-title">一颗低功耗 BLE 模组，<br>跟 MCU 串口对话。</h2>
+      <p class="section-lede">蓝牙从机模式，可被手机连接；模组只管广播 + 透传，所有"业务"留给主控 MCU。它在上电时主动向 MCU 要 MAC、密码、设备名、UUID，要不到就用默认值。</p>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="marginalia">关键事实<br>at a glance</div>
+    <div class="body">
+      <div class="spec-grid">
+        <div>
+          <div class="label">角色</div>
+          <div class="value">蓝牙从机<small>Peripheral，被主机连接</small></div>
+        </div>
+        <div>
+          <div class="label">透传协议</div>
+          <div class="value">FC / FB<small>私有封包，最大数据域 253B</small></div>
+        </div>
+        <div>
+          <div class="label">默认服务</div>
+          <div class="value">0xFF01<small>Notify FF02 · Write FF03</small></div>
+        </div>
+        <div>
+          <div class="label">默认广播</div>
+          <div class="value">45 ms<small>快速广播，3 分钟后转慢速</small></div>
+        </div>
+        <div>
+          <div class="label">默认功率</div>
+          <div class="value">0 dBm<small>可配置至 +4 / +8 / +20</small></div>
+        </div>
+        <div>
+          <div class="label">单包上限</div>
+          <div class="value">1024 B<small>缓存，业务可分包</small></div>
+        </div>
+      </div>
+
+      <p style="margin-top:32px">模组本身不持久化任何参数。每次上电它会向 MCU "讨"配置，MCU 在 100 ms 内回复，模组就以你给的 MAC、UUID 启动广播；如果 MCU 不响应（5 次请求都没回），模组会退回到芯片烧录的默认值。这意味着——你的配置策略由 MCU 决定，模组只是个执行端。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============= 2. HARDWARE ============= -->
+<section id="hardware">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div>
+      <div class="section-kicker">Section Two · 硬件 & 串口</div>
+      <h2 class="section-title">两条 UART 线，<br>外加一根状态指示。</h2>
+      <p class="section-lede">DB809 和 BB810 的引脚定义不同，移板时第一件事就是核对 RX/TX。</p>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="marginalia">UART<br>9600 8-N-1</div>
+    <div class="body">
+      <h3><span class="num">2.1</span>引脚映射</h3>
+      <table class="pin-table">
+        <thead>
+          <tr><th>信号</th><th>DB809</th><th>BB810</th><th>用途</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>UART_RX</td><td>P0.12</td><td>P0.11</td><td>模组接收 ← 来自 MCU</td></tr>
+          <tr><td>UART_TX</td><td>P0.14</td><td>P0.12</td><td>模组发送 → 送往 MCU</td></tr>
+          <tr><td>CONN_STAT</td><td>P0.5</td><td>—</td><td>低电平 = 已连接；高电平 = 断开</td></tr>
+        </tbody>
+      </table>
+
+      <h3><span class="num">2.2</span>串口参数</h3>
+      <p>波特率 <code>9600</code>，8 位数据，无校验，1 停止位。这是硬性参数，固件不可配置，串口工具和 MCU 都要严格一致。</p>
+
+      <div class="callout note">
+        <div class="callout-icon">i</div>
+        <div>
+          <p><strong>连接状态读法两种</strong>：硬件方式是直接读 DB809 的 P0.5 引脚电平，毫秒级响应；软件方式是发 <code>0xB00E</code> 查询，要走一次串口往返。中断里要快速感知断连，用 P0.5。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= 3. PROTOCOL FRAME ============= -->
+<section id="protocol">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div>
+      <div class="section-kicker">Section Three · 协议帧</div>
+      <h2 class="section-title">FC / FB 帧，<br>逐字节解剖。</h2>
+      <p class="section-lede">所有命令——配置、查询、设置、数据透传——共享同一个帧结构。看懂这十个字段，剩下就是查表。</p>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="marginalia">Frame<br>structure</div>
+    <div class="body">
+      <p>一个最短的请求帧（设置系统复位）：</p>
+
+      <div class="frame-anatomy">
+        <div class="frame">
+          <div class="byte head"><div class="hex">FC</div><div class="label">帧头</div></div>
+          <div class="byte addr"><div class="hex">12</div><div class="label">地址</div></div>
+          <div class="byte start"><div class="hex">FC</div><div class="label">起始符</div></div>
+          <div class="byte type"><div class="hex">13</div><div class="label">类型<br>设置</div></div>
+          <div class="byte len"><div class="hex">03</div><div class="label">长度<br>N+2</div></div>
+          <div class="byte tagL"><div class="hex">00</div><div class="label">tagL</div></div>
+          <div class="byte tagH"><div class="hex">B0</div><div class="label">tagH</div></div>
+          <div class="byte data"><div class="hex">01</div><div class="label">数据<br>复位</div></div>
+          <div class="byte check"><div class="hex">D1</div><div class="label">校验<br>累加和</div></div>
+          <div class="byte tail"><div class="hex">FB</div><div class="label">帧尾</div></div>
+        </div>
+
+        <div class="frame-legend">
+          <div><span class="swatch" style="background:var(--f-head)"></span>帧头/起始/帧尾 固定值</div>
+          <div><span class="swatch" style="background:var(--f-addr)"></span>地址 <code>0xAA</code> 通配</div>
+          <div><span class="swatch" style="background:var(--f-type)"></span>报文类型</div>
+          <div><span class="swatch" style="background:var(--f-len)"></span>长度 = 数据域 N + 2</div>
+          <div><span class="swatch" style="background:var(--f-tagL)"></span>数据标签 (16-bit LE)</div>
+          <div><span class="swatch" style="background:var(--f-data)"></span>数据域</div>
+          <div><span class="swatch" style="background:var(--f-check)"></span>校验 = 累加和</div>
+          <div><span class="swatch" style="background:var(--f-wake)"></span>FE FE FE 唤醒码</div>
+        </div>
+      </div>
+
+      <h3><span class="num">3.1</span>报文类型对照</h3>
+      <table class="pin-table">
+        <thead>
+          <tr><th>类型</th><th>方向</th><th>含义</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0x11</td><td>模组 → MCU</td><td>请求参数（模组要数据）</td></tr>
+          <tr><td>0x91</td><td>MCU → 模组</td><td>响应请求（MCU 给数据）</td></tr>
+          <tr><td>0x12</td><td>双向</td><td>获取参数</td></tr>
+          <tr><td>0x92</td><td>响应</td><td>获取应答</td></tr>
+          <tr><td>0x13</td><td>双向</td><td>设置参数</td></tr>
+          <tr><td>0x93</td><td>响应</td><td>设置应答（最高位 0x80 置位）</td></tr>
+        </tbody>
+      </table>
+
+      <h3><span class="num">3.2</span>响应里的高位 0x80</h3>
+      <p>请求帧类型是 <code>0x11/0x12/0x13</code>，应答帧把 bit7 置位，于是变成 <code>0x91/0x92/0x93</code>。看到 <code>0x93</code> 就知道这是某条设置命令的回执，再看数据域 1 字节是 <code>0x00</code>（成功）还是 <code>0x01</code>（失败）。</p>
+
+      <h3><span class="num">3.3</span>FE FE FE 唤醒码</h3>
+      <p>V1.17 起，模组在<em>主动下发请求</em>或<em>响应 MCU 指令</em>时，会在帧前面附加 3 字节 <code>0xFE 0xFE 0xFE</code> 唤醒码。这是给低功耗 MCU 用的：MCU 的 UART 可能在 STOP 模式下需要前导字节唤醒接收器，FE FE FE 充当"前同步码"，被 MCU 串口丢弃也不影响后续帧。</p>
+
+      <div class="callout">
+        <div class="callout-icon">!</div>
+        <div>
+          <p><strong>解析时</strong>：MCU 收到字节流后，定位帧首要从 <code>0xFC</code> 开始扫描；前面的 <code>FE FE FE</code>（甚至更多 FE）当作噪声跳过即可。不要把它纳入校验和计算。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= 4. HANDSHAKE ============= -->
+<section id="handshake">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div>
+      <div class="section-kicker">Section Four · 上电握手</div>
+      <h2 class="section-title">模组先问，<br>MCU 后答。</h2>
+      <p class="section-lede">这是整个固件最容易被忽视的细节——上电后是模组主动来要参数，而不是 MCU 主动下发。错过窗口，参数就用不上。</p>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="marginalia">100 ms<br>response<br>window</div>
+    <div class="body">
+
+      <div class="sequence">
+        <div class="seq-header">
+          <div>时序</div>
+          <div>MCU</div>
+          <div>BLE 模组</div>
+        </div>
+
+        <div class="seq-row">
+          <div class="seq-time">T+0</div>
+          <div class="seq-msg from-mod">FC AA FC 11 02 07 B0 6C FB
+            <span class="annot">"请给我 MAC / PSW / 设备名 / 广播状态"<span class="seq-retry">×5 重试</span></span>
+          </div>
+        </div>
+
+        <div class="seq-row">
+          <div class="seq-time">≤100 ms</div>
+          <div class="seq-msg from-mcu">FC 12 FC 91 15 07 B0 &lt;15B&gt; ck FB
+            <span class="annot">回 0xB007：6B MAC + 4B PSW + 8B Name + 1B State</span>
+          </div>
+        </div>
+
+        <div class="seq-row">
+          <div class="seq-time">T+~500ms</div>
+          <div class="seq-msg from-mod">FC AA FC 11 02 0D B0 72 FB
+            <span class="annot">"请给我蓝牙服务 UUID 配置"<span class="seq-retry">×5 重试</span></span>
+          </div>
+        </div>
+
+        <div class="seq-row">
+          <div class="seq-time">≤100 ms</div>
+          <div class="seq-msg from-mcu">FC AA FC 91 09 0D B0 00 FF01 FF02 FF03 ck FB
+            <span class="annot">回 0xB00D：属性字节 + 16-bit 或 128-bit UUID</span>
+          </div>
+        </div>
+
+        <div class="seq-row">
+          <div class="seq-note">↳ 若 MCU 不应答：5 次请求过后模组使用芯片默认 MAC + 默认 UUID（FF01/02/03）启动。</div>
+        </div>
+
+        <div class="seq-row">
+          <div class="seq-time">T+ready</div>
+          <div class="seq-msg broadcast">📡 模组开始广播 ADV_IND · 等待手机连接</div>
+        </div>
+      </div>
+
+      <h3><span class="num">4.1</span>窗口期的实际含义</h3>
+      <p>"100 ms 内回复"是<strong>每次请求</strong>的窗口，不是上电后的总窗口。也就是说，如果你回得慢，模组发完第 1 次请求等 100 ms 没等到，会发第 2 次……一直到第 5 次都没等到才放弃。所以低端 MCU 也能赶得上。</p>
+
+      <h3><span class="num">4.2</span>建议的 MCU 实现</h3>
+      <p>不要把上电握手做成"主动配置"——而是在 UART RX 中断里持续监听，识别出 <code>0xB007</code> 或 <code>0xB00D</code> 请求后立刻把预存好的参数发回去。这样无论模组是冷启动、软复位（<code>0xB000</code> 命令触发）还是从 system off 唤醒，逻辑都统一。</p>
+
+      <div class="callout tip">
+        <div class="callout-icon">✓</div>
+        <div>
+          <p><strong>调试小窍门</strong>：第一次联调可以故意不回复，让模组用默认 UUID（FF01/FF02/FF03）和默认 MAC 跑起来，nRF Connect 直接能扫到 <code>BLEMeter</code>。链路打通后再加握手回复。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= 5. COMMANDS ============= -->
+<section id="commands">
+  <div class="section-head">
+    <div class="section-num">05</div>
+    <div>
+      <div class="section-kicker">Section Five · 命令速查</div>
+      <h2 class="section-title">十二条命令，<br>覆盖所有场景。</h2>
+      <p class="section-lede">按数据标签字母顺序排列。括号里是常用方向。</p>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="marginalia">Command<br>set · v1.20</div>
+    <div class="body">
+      <table class="cmd-table">
+        <thead>
+          <tr>
+            <th style="width:90px">标签</th>
+            <th>功能</th>
+            <th style="width:140px">类型</th>
+            <th>数据域</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tag">0xB000</td>
+            <td class="desc">设置系统状态（复位 / 深度睡眠）</td>
+            <td class="kind"><span class="tag-pill set">SET</span></td>
+            <td class="desc">1B：<code>0x01</code> 复位 · <code>0x00</code> 深睡</td>
+          </tr>
+          <tr>
+            <td class="tag">0xB007</td>
+            <td class="desc">配置工作参数（MAC + PSW + Name + 广播状态）</td>
+            <td class="kind"><span class="tag-pill req">REQ</span></td>
+            <td class="desc">6+4+(1~19)+1 字节</td>
+          </tr>
+          <tr>
+            <td class="tag">0xB008</td>
+            <td class="desc">设置广播中的厂商自定义数据（旧版接口）</td>
+            <td class="kind"><span class="tag-pill req">REQ</span></td>
+            <td class="desc">4B 自定义。注意：设备名将被截至 14B</td>
+          </tr>
+          <tr>
+            <td class="tag">0xB00D</td>
+            <td class="desc">配置蓝牙服务 UUID</td>
+            <td class="kind"><span class="tag-pill req">REQ</span></td>
+            <td class="desc">1B 属性 + 3×(2B 或 16B) UUID</td>
+          </tr>
+          <tr>
+            <td class="tag">0xB00E</td>
+            <td class="desc">获取当前连接状态</td>
+            <td class="kind"><span class="tag-pill get">GET</span></td>
+            <td class="desc">返回 1B：<code>0x01</code> 连接 / <code>0x00</code> 断开</td>
+          </tr>
+          <tr>
+            <td class="tag">0xB011</td>
+            <td class="desc">获取固件版本号</td>
+            <td class="kind"><span class="tag-pill get">GET</span></td>
+            <td class="desc">3B：主版本.次版本.编译次数</td>
+          </tr>
+          <tr>
+            <td class="tag">0xB012</td>
+            <td class="desc">设定广播参数（模式 + 间隔）</td>
+            <td class="kind"><span class="tag-pill set">GET/SET</span></td>
+            <td class="desc">1B 模式 + 2B 间隔（20~5000 ms）</td>
+          </tr>
+          <tr>
+            <td class="tag">0xB013</td>
+            <td class="desc">设置发射功率</td>
+            <td class="kind"><span class="tag-pill set">GET/SET</span></td>
+            <td class="desc">1B 有符号：-40 ~ +20 dBm</td>
+          </tr>
+          <tr>
+            <td class="tag">0xB014</td>
+            <td class="desc">动态更新 / 查询广播数据</td>
+            <td class="kind"><span class="tag-pill set">GET/SET</span></td>
+            <td class="desc">3~31B，LTV 格式</td>
+          </tr>
+          <tr>
+            <td class="tag">0xB015</td>
+            <td class="desc">动态更新 / 查询扫描响应数据</td>
+            <td class="kind"><span class="tag-pill set">GET/SET</span></td>
+            <td class="desc">3~31B，LTV 格式</td>
+          </tr>
+          <tr>
+            <td class="tag">0xC001</td>
+            <td class="desc">获取实际启用的蓝牙 MAC 地址</td>
+            <td class="kind"><span class="tag-pill get">GET</span></td>
+            <td class="desc">6B，高位在前</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout note">
+        <div class="callout-icon">i</div>
+        <div>
+          <p><strong>关于 0xB014 / 0xB015</strong>：这是 V1.20 新增的动态广播控制接口，连接状态下发会返回失败。数据按 BLE 核心规范的 LTV 格式组织（Length-Type-Value），每个 TLV 段独立有效，整包不超过 31 字节。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= 6. OPERATIONS ============= -->
+<section id="operations">
+  <div class="section-head">
+    <div class="section-num">06</div>
+    <div>
+      <div class="section-kicker">Section Six · 关键操作</div>
+      <h2 class="section-title">五个高频场景，<br>每个一对 TX/RX。</h2>
+      <p class="section-lede">把这些片段背下来，串口助手手动调通基本不会卡。</p>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="marginalia">Common<br>workflows</div>
+    <div class="body">
+
+      <h3><span class="num">6.1</span>查询连接状态</h3>
+      <div class="transcript">
+        <span class="line"><span class="arrow-tx">TX →</span> FC AA FC 12 02 0E B0 74 FB</span>
+        <span class="gloss">读 0xB00E。</span>
+        <span class="line"><span class="arrow-rx">RX ←</span> <span class="wake">FE FE FE</span> FC AA FC 92 03 0E B0 <strong>01</strong> F6 FB</span>
+        <span class="gloss">数据域 = 01 → 已连接。</span>
+      </div>
+
+      <h3><span class="num">6.2</span>软件复位模组</h3>
+      <div class="transcript">
+        <span class="line"><span class="arrow-tx">TX →</span> FC 12 FC 13 03 00 B0 <strong>01</strong> D1 FB</span>
+        <span class="gloss">写 0xB000，数据 01 = 复位。</span>
+        <span class="line"><span class="arrow-rx">RX ←</span> <span class="wake">FE FE FE</span> FC 12 FC 93 03 00 B0 00 50 FB</span>
+        <span class="gloss">应答 0x93，状态 00 = 成功。随后模组重启并发起 0xB007 请求。</span>
+      </div>
+
+      <h3><span class="num">6.3</span>切换到慢广播</h3>
+      <div class="transcript">
+        <span class="line"><span class="arrow-tx">TX →</span> FC AA FC 13 03 12 B0 <strong>01</strong> 7B FB</span>
+        <span class="gloss">写 0xB012，参数 01 = 慢速广播 (2 s)。</span>
+        <span class="line"><span class="arrow-rx">RX ←</span> FC AA FC 93 03 12 B0 00 FA FB</span>
+        <span class="gloss">成功。注意广播参数不持久化，下次上电恢复 45 ms 快广播。</span>
+      </div>
+
+      <h3><span class="num">6.4</span>进入深度睡眠</h3>
+      <div class="transcript">
+        <span class="line"><span class="arrow-tx">TX →</span> FC 12 FC 13 03 00 B0 <strong>00</strong> D0 FB</span>
+        <span class="gloss">写 0xB000，数据 00 = system off。</span>
+        <span class="line"><span class="arrow-rx">RX ←</span> FC 12 FC 93 03 00 B0 00 50 FB</span>
+        <span class="gloss">应答后即进入超低静态电流。任意串口字节即可唤醒，醒来后重发 0xB007 请求参数。</span>
+      </div>
+
+      <h3><span class="num">6.5</span>读取实际 MAC</h3>
+      <div class="transcript">
+        <span class="line"><span class="arrow-tx">TX →</span> FC AA FC 12 02 01 C0 77 FB</span>
+        <span class="gloss">读 0xC001。</span>
+        <span class="line"><span class="arrow-rx">RX ←</span> FC AA FC 92 08 01 C0 <strong>F4 D2 8B 8C 0F B8</strong> A1 FB</span>
+        <span class="gloss">注意：输出已经反转过——直接读为 F4:D2:8B:8C:0F:B8（手机 App 上看到的就是这个顺序）。</span>
+      </div>
+
+      <div class="callout">
+        <div class="callout-icon">!</div>
+        <div>
+          <p><strong>关于 MAC 字节序</strong>：通过 0xB007 <em>下发</em> MAC 时按高位在前（与手机阅读顺序一致）；模组内部按低位在前存储；通过 0xC001 <em>读取</em> 时输出已经反转为高位在前。下发和读取看起来一致，只在 RAM 里翻一次。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============= 7. DEBUGGING ============= -->
+<section id="debugging">
+  <div class="section-head">
+    <div class="section-num">07</div>
+    <div>
+      <div class="section-kicker">Section Seven · 调试经验</div>
+      <h2 class="section-title">先核字节数，<br>再看 FC 是否就位。</h2>
+      <p class="section-lede">绝大多数"模组不响应"的问题不在协议层，在物理层和工具层。下面这几个陷阱反复见。</p>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="marginalia">Field-tested<br>traps</div>
+    <div class="body">
+
+      <h3><span class="num">7.1</span>陷阱一：串口工具发了 ASCII，不是 HEX</h3>
+      <p>这是最常见也最隐蔽的坑——你在串口助手输入框里看到的是 <code>FC 12 FC 13 03 00 B0 01 D1 FB</code>，但工具没勾选 HEX 发送，结果发出去的是这 31 个字符的 ASCII 编码。模组收到 <code>0x46 0x43 0x20…</code>，第一个字节就不是 <code>0xFC</code>，整帧丢弃。</p>
+
+      <div class="compare">
+        <div class="panel wrong">
+          <div class="panel-label">WRONG · 文本模式发送</div>
+          <h4>看到的 vs 发出的</h4>
+          <p>输入框里：<code>FC 12 FC 13 03 00 B0 01 D1 FB</code></p>
+          <p>实际线路上 31 字节：</p>
+          <div class="mini-hex">46 43 20 31 32 20 46 43 20 31 33 20 30 33 20 30 30 20 42 30 20 30 31 20 44 31 20 46 42 <strong>0D 0A</strong></div>
+          <p>解码即 <code>"FC 12 FC 13 03 00 B0 01 D1 FB\r\n"</code>。模组沉默。</p>
+        </div>
+        <div class="panel right">
+          <div class="panel-label">RIGHT · 二进制发送</div>
+          <h4>勾选 HEX 发送</h4>
+          <p>同样的输入：<code>FC 12 FC 13 03 00 B0 01 D1 FB</code></p>
+          <p>实际线路上 10 字节：</p>
+          <div class="mini-hex">FC 12 FC 13 03 00 B0 01 D1 FB</div>
+          <p>模组识别为复位命令，立即回 <code>FE FE FE FC 12 FC 93 03 00 B0 00 50 FB</code>。</p>
+        </div>
+      </div>
+
+      <div class="callout tip">
+        <div class="callout-icon">✓</div>
+        <div>
+          <p><strong>30 秒诊断法</strong>：对照 TX 显示的字节数。10 字节是对的，31 字节就是 ASCII 模式——每个十六进制字符占 1 字节、空格占 1 字节、再加上自动追加的 CRLF（0D 0A），刚好凑出 31。</p>
+        </div>
+      </div>
+
+      <h3><span class="num">7.2</span>陷阱二：把 FE FE FE 当成错误数据</h3>
+      <p>MCU 接收解析器如果是按 "首字节必须是 0xFC" 来严格断帧的，碰到 V1.17+ 的固件就会有问题——模组每次主动下发都会带 3 字节 FE 前导码。解析器应该容忍前导字节直到看见 <code>0xFC</code> 再开始组帧。</p>
+
+      <h3><span class="num">7.3</span>陷阱三：错过握手窗口</h3>
+      <p>MCU 上电太慢、或者串口 RX 中断没及时开启，会错过模组的前几次 0xB007 请求。表象是手机扫得到设备但显示的是默认 MAC 或默认 UUID。</p>
+      <div class="callout note">
+        <div class="callout-icon">i</div>
+        <div>
+          <p><strong>排查方法</strong>：用 0xC001 读模组实际启用的 MAC。如果读出来是 <code>FF:xx:xx:xx:xx:xx</code> 一类的随机静态地址（最高字节高 2 bit 为 11），就说明 MCU 没成功配置，模组用了默认值。</p>
+        </div>
+      </div>
+
+      <h3><span class="num">7.4</span>陷阱四：连接状态下改广播参数</h3>
+      <p>0xB014 / 0xB015 在<em>已连接状态</em>下会返回失败。同理，0xB013 改发射功率会强制断开当前连接。设计应用层流程时要把这些"破坏性"操作放在未连接窗口。</p>
+
+      <h3><span class="num">7.5</span>调试套件配置建议</h3>
+      <p>串口助手（SSCOM、PySerialStudio 之类）务必打开：</p>
+      <ul style="margin-left:24px;margin-bottom:18px">
+        <li><strong>HEX 发送 / HEX 显示</strong>——避免字符模式陷阱</li>
+        <li><strong>校验和自动计算</strong>（如有）——避免手动算累加和错误</li>
+        <li><strong>带方向标签和时间戳的日志</strong>——便于事后分析时序</li>
+        <li><strong>偏移地址 + ASCII 旁注</strong>——一眼看出有没有 0x46 / 0x20 这种"ASCII 入侵"</li>
+      </ul>
+
+      <h3><span class="num">7.6</span>怎么读 dump 日志</h3>
+      <p>遇到不明数据时，按下面这个三步定位：</p>
+      <ol style="margin-left:24px;margin-bottom:18px;list-style:decimal">
+        <li><strong>查字节数对不对</strong>。预期 10 字节，实际 31？立刻怀疑 ASCII。</li>
+        <li><strong>查 ASCII 旁注</strong>。如果旁注是可读字符（F、C、空格、数字），基本是文本污染。</li>
+        <li><strong>查首字节</strong>。不是 0xFC 也不是 0xFE，那就不是这个协议——查波特率、查极性、查接线。</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ============= 8. CHECKLIST ============= -->
+<section id="checklist">
+  <div class="section-head">
+    <div class="section-num">08</div>
+    <div>
+      <div class="section-kicker">Section Eight · 联调清单</div>
+      <h2 class="section-title">出门前过一遍。</h2>
+      <p class="section-lede">硬件刚到手、MCU 第一次接上 BLE 模组、或者每次大改之后，照着勾。</p>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="marginalia">Bring-up<br>checklist</div>
+    <div class="body">
+      <ul class="checklist">
+        <li>电源稳定，串入电流表，确认上电峰值 / 静态电流符合预期</li>
+        <li>UART 接线核对：MCU TX → 模组 RX；MCU RX → 模组 TX（不要接反）</li>
+        <li>波特率两端都是 <code>9600 8-N-1</code>，无校验</li>
+        <li>串口工具确认 <strong>HEX 发送模式开启</strong>，无自动追加 CRLF</li>
+        <li>发一条 <code>FC AA FC 12 02 11 B0 77 FB</code> 读固件版本，确认链路通</li>
+        <li>用 nRF Connect 扫到 <code>BLEMeter / DB809 / BB810</code> 设备名</li>
+        <li>MCU 端 UART RX 中断已使能，能识别 <code>0xFC</code> 帧首并跳过 <code>0xFE</code> 前导</li>
+        <li>上电握手代码已就位：能响应 <code>0xB007</code>（即便用默认值也要回）</li>
+        <li>P0.5 连接状态引脚已接入 MCU GPIO 并设置为输入（如使用硬件状态指示）</li>
+        <li>手机连接后能双向收发数据，包长在 1024 字节缓存内</li>
+        <li>断开连接后模组在 2 秒间隔慢广播状态，可被重新扫描到</li>
+        <li>所有"破坏性"命令（改功率、改广播数据）已确认在断连状态下发出</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="ornament">— fin —</div>
+  <div>编纂者笔记 · 整理自固件文档 V1.20.2 + 现场联调记录<br>
+  本文献给所有在凌晨两点对着串口助手发呆的嵌入式同行</div>
+</footer>
+
+</body>
+</html>

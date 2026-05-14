@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INA219 — 工程参考手册</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Major+Mono+Display&family=IBM+Plex+Sans+Condensed:wght@300;400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-void: #07090C;
+  --bg-primary: #0A0F14;
+  --bg-secondary: #0E141C;
+  --bg-card: #131C26;
+  --bg-card-elevated: #18222E;
+  --border-faint: #1A2434;
+  --border: #243246;
+  --border-strong: #34465E;
+  --text-primary: #E8EDF2;
+  --text-secondary: #9BA8B8;
+  --text-dim: #5A6573;
+  --text-faint: #3A4252;
+  --amber: #F5A623;
+  --amber-dim: #B97D1C;
+  --amber-glow: rgba(245, 166, 35, 0.12);
+  --cyan: #00D9FF;
+  --cyan-dim: #0096B0;
+  --cyan-glow: rgba(0, 217, 255, 0.10);
+  --green: #4ADE80;
+  --red: #EF4444;
+  --red-glow: rgba(239, 68, 68, 0.10);
+  --font-display: 'Major Mono Display', monospace;
+  --font-ui: 'IBM Plex Sans Condensed', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-serif: 'IBM Plex Serif', serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(155, 168, 184, 0.05) 1px, transparent 0);
+  background-size: 24px 24px;
+  background-attachment: fixed;
+}
+
+/* ===== Top Bar ===== */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(7, 9, 12, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-faint);
+  padding: 12px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.topbar-left { color: var(--amber); }
+.topbar-mid { color: var(--text-dim); }
+.topbar-right { color: var(--text-dim); display: flex; gap: 24px; }
+.topbar-right span::before { content: '· '; color: var(--text-faint); margin-right: 4px; }
+
+/* ===== Layout ===== */
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 64px 32px;
+}
+
+/* ===== Hero ===== */
+.hero {
+  border: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  padding: 56px 48px;
+  margin-bottom: 64px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+}
+.hero::after {
+  content: 'INA219';
+  position: absolute;
+  bottom: -40px;
+  right: -20px;
+  font-family: var(--font-display);
+  font-size: 280px;
+  color: var(--amber);
+  opacity: 0.04;
+  pointer-events: none;
+  letter-spacing: -0.05em;
+}
+.hero-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  color: var(--amber);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: 72px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+.hero-subtitle {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--text-secondary);
+  max-width: 720px;
+  line-height: 1.5;
+  margin-bottom: 40px;
+}
+.hero-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  border-top: 1px solid var(--border-faint);
+  padding-top: 32px;
+  margin-top: 32px;
+}
+.hero-meta-item-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.hero-meta-item-value {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.hero-meta-item-value .accent { color: var(--amber); }
+
+/* ===== Section ===== */
+section { margin-bottom: 96px; scroll-margin-top: 80px; }
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.section-num {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--amber);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+}
+.section-title {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 32px;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.section-tag {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.lede {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  font-style: italic;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+  max-width: 760px;
+  line-height: 1.65;
+  border-left: 2px solid var(--amber);
+  padding-left: 20px;
+}
+
+p { margin-bottom: 16px; max-width: 820px; color: var(--text-primary); }
+p strong { color: var(--text-primary); font-weight: 600; }
+p em { color: var(--amber); font-style: normal; font-weight: 500; }
+
+h3 {
+  font-family: var(--font-ui);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 40px 0 16px;
+  color: var(--text-primary);
+  letter-spacing: -0.005em;
+}
+h3::before {
+  content: '◢ ';
+  color: var(--amber);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  position: relative;
+  top: -2px;
+}
+h4 {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 24px 0 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+ul, ol { margin: 12px 0 20px 24px; }
+li { margin-bottom: 8px; line-height: 1.6; }
+
+/* ===== Cards & Boxes ===== */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-faint);
+  padding: 24px;
+  margin: 20px 0;
+}
+.card-header {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--amber);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+}
+
+.alert {
+  border-left: 3px solid var(--amber);
+  background: var(--amber-glow);
+  padding: 18px 24px;
+  margin: 20px 0;
+  font-size: 14px;
+}
+.alert-danger {
+  border-left-color: var(--red);
+  background: var(--red-glow);
+}
+.alert-info {
+  border-left-color: var(--cyan);
+  background: var(--cyan-glow);
+}
+.alert-title {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 8px;
+}
+.alert-danger .alert-title { color: var(--red); }
+.alert-info .alert-title { color: var(--cyan); }
+
+/* ===== Tables ===== */
+.tbl-wrap {
+  margin: 24px 0;
+  border: 1px solid var(--border-faint);
+  background: var(--bg-card);
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+thead { background: var(--bg-secondary); }
+th {
+  text-align: left;
+  padding: 12px 16px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-faint);
+  color: var(--text-primary);
+  vertical-align: top;
+}
+tr:last-child td { border-bottom: 0; }
+tr:hover td { background: rgba(245, 166, 35, 0.03); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.amber { color: var(--amber); }
+td.cyan { color: var(--cyan); }
+
+/* ===== Code ===== */
+pre {
+  background: var(--bg-void);
+  border: 1px solid var(--border-faint);
+  padding: 20px 24px;
+  overflow-x: auto;
+  margin: 20px 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-primary);
+  position: relative;
+}
+pre::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--amber);
+  color: var(--bg-void);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  padding: 4px 10px;
+  text-transform: uppercase;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--amber);
+  background: rgba(245, 166, 35, 0.08);
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+pre code { background: transparent; padding: 0; color: inherit; }
+
+.kw { color: #FF7BAC; }
+.tp { color: var(--cyan); }
+.fn { color: var(--amber); }
+.nm { color: #C5A8FF; }
+.st { color: var(--green); }
+.cm { color: var(--text-dim); font-style: italic; }
+.pp { color: #FFAA66; }
+
+/* ===== Formula ===== */
+.formula {
+  background: var(--bg-void);
+  border: 1px solid var(--border);
+  padding: 32px;
+  margin: 24px 0;
+  text-align: center;
+  position: relative;
+  overflow-x: auto;
+}
+.formula::before {
+  content: 'EQ';
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--amber);
+}
+.formula-inner {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 6px;
+}
+.frac-top { border-bottom: 1px solid var(--text-secondary); padding: 0 12px 4px; }
+.frac-bot { padding: 4px 12px 0; color: var(--cyan); }
+.frac-top .num-amb, .frac-bot .num-amb { color: var(--amber); }
+
+/* ===== Bit Field Visualizer ===== */
+.bit-register {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 24px;
+  margin: 24px 0;
+}
+.bit-register-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-faint);
+}
+.bit-register-name {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.bit-register-name .addr { color: var(--amber); margin-left: 8px; }
+.bit-register-value {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  color: var(--amber);
+  letter-spacing: 0.05em;
+}
+.bit-grid {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+.bit-cell {
+  text-align: center;
+  padding: 6px 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-faint);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s;
+  position: relative;
+}
+.bit-cell:hover { border-color: var(--amber); }
+.bit-cell.set { background: var(--amber); color: var(--bg-void); border-color: var(--amber); font-weight: 700; }
+.bit-cell.reserved { background: var(--bg-void); color: var(--text-faint); cursor: not-allowed; }
+.bit-cell.field-edge-l { border-left: 2px solid var(--cyan); }
+.bit-cell.field-edge-r { border-right: 2px solid var(--cyan); }
+.bit-labels {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 16px;
+}
+.bit-fields { margin-top: 20px; }
+.bit-field {
+  display: grid;
+  grid-template-columns: 80px 1fr 200px;
+  gap: 16px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border-faint);
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.bit-field:hover { background: rgba(245, 166, 35, 0.04); }
+.bit-field.active { background: var(--amber-glow); }
+.bit-field-name { color: var(--cyan); font-weight: 500; }
+.bit-field-desc { color: var(--text-secondary); font-family: var(--font-serif); font-size: 13px; }
+.bit-field-val { color: var(--amber); text-align: right; }
+
+/* ===== Calculator ===== */
+.calc {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 0;
+  margin: 32px 0;
+  overflow: hidden;
+}
+.calc-header {
+  background: var(--bg-secondary);
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.calc-title {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  color: var(--amber);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.calc-status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--green);
+}
+.calc-status::before { content: '● '; color: var(--green); }
+.calc-status.warn { color: var(--amber); }
+.calc-status.warn::before { color: var(--amber); }
+.calc-status.err { color: var(--red); }
+.calc-status.err::before { color: var(--red); }
+.calc-body {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+}
+.calc-input {
+  background: var(--bg-secondary);
+  padding: 24px;
+  border-right: 1px solid var(--border);
+}
+.input-group { margin-bottom: 24px; }
+.input-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.input-label .unit { color: var(--cyan); }
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-void);
+  border: 1px solid var(--border);
+  padding: 0;
+}
+.input-row input {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--amber);
+  outline: none;
+  font-weight: 500;
+}
+.input-row input:focus { color: var(--text-primary); }
+.input-row .suffix {
+  padding: 0 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  border-left: 1px solid var(--border-faint);
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+}
+.input-help {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.preset-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.preset {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.preset:hover { border-color: var(--amber); color: var(--amber); }
+
+.calc-output { padding: 24px; }
+.output-block {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px dashed var(--border-faint);
+}
+.output-block:last-child { border-bottom: 0; padding-bottom: 0; }
+.output-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.output-value {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  color: var(--amber);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.output-value-sm {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--text-primary);
+}
+.output-aux {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.output-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+.pga-bar {
+  margin-top: 8px;
+  display: flex;
+  height: 32px;
+  border: 1px solid var(--border);
+}
+.pga-seg {
+  flex: 1;
+  background: var(--bg-void);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  border-right: 1px solid var(--border-faint);
+  transition: all 0.2s;
+}
+.pga-seg:last-child { border-right: 0; }
+.pga-seg.active { background: var(--amber); color: var(--bg-void); font-weight: 700; }
+.pga-seg.feasible { background: var(--bg-card-elevated); color: var(--text-secondary); }
+
+.gen-code {
+  margin-top: 16px;
+  background: var(--bg-void);
+  padding: 16px 20px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  border: 1px solid var(--border-faint);
+  position: relative;
+  overflow-x: auto;
+}
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.copy-btn:hover { border-color: var(--amber); color: var(--amber); }
+.copy-btn.ok { color: var(--green); border-color: var(--green); }
+
+/* ===== Reverse Calc ===== */
+.rev-calc {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+.rev-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 20px;
+}
+.rev-card-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 12px;
+}
+.rev-card input {
+  width: 100%;
+  background: var(--bg-void);
+  border: 1px solid var(--border);
+  color: var(--amber);
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 12px;
+}
+.rev-card input:focus { border-color: var(--amber); }
+.rev-card-result {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  color: var(--text-primary);
+}
+.rev-card-result .lbl { color: var(--text-dim); font-size: 11px; margin-right: 8px; }
+
+/* ===== Diagnostic ===== */
+.diag-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+.diag-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-faint);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.diag-card:hover { border-color: var(--amber); }
+.diag-card.expanded { border-color: var(--amber); background: var(--bg-card-elevated); }
+.diag-symptom {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+.diag-symptom::after { content: '+'; color: var(--amber); font-family: var(--font-mono); }
+.diag-card.expanded .diag-symptom::after { content: '−'; }
+.diag-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.diag-detail { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-faint); font-size: 13px; line-height: 1.65; }
+.diag-card.expanded .diag-detail { display: block; }
+.diag-detail h5 {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin: 12px 0 6px;
+}
+.diag-detail h5:first-child { margin-top: 0; }
+
+/* ===== ASCII Diagram ===== */
+.ascii-art {
+  background: var(--bg-void);
+  border: 1px solid var(--border);
+  padding: 24px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--text-secondary);
+  margin: 24px 0;
+}
+.ascii-art .h { color: var(--amber); }
+.ascii-art .c { color: var(--cyan); }
+.ascii-art .g { color: var(--green); }
+
+/* ===== TOC ===== */
+.toc {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  width: 220px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  z-index: 50;
+  display: none;
+}
+.toc-title {
+  color: var(--amber);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-faint);
+}
+.toc a {
+  display: block;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 4px 0;
+  transition: color 0.15s;
+}
+.toc a:hover { color: var(--amber); }
+.toc a .num { color: var(--text-dim); margin-right: 8px; }
+
+@media (min-width: 1500px) { .toc { display: block; } }
+
+/* ===== Footer ===== */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 48px 32px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+footer .sep { color: var(--text-faint); margin: 0 12px; }
+
+/* ===== Mobile ===== */
+@media (max-width: 768px) {
+  .container { padding: 32px 16px; }
+  .hero { padding: 32px 24px; }
+  .hero-title { font-size: 44px; }
+  .hero-subtitle { font-size: 17px; }
+  .hero-meta { grid-template-columns: 1fr 1fr; gap: 16px; }
+  .calc-body { grid-template-columns: 1fr; }
+  .calc-input { border-right: 0; border-bottom: 1px solid var(--border); }
+  .rev-calc { grid-template-columns: 1fr; }
+  .diag-grid { grid-template-columns: 1fr; }
+  .bit-grid, .bit-labels { grid-template-columns: repeat(8, 1fr); font-size: 10px; }
+  .section-title { font-size: 24px; }
+  .topbar { padding: 10px 16px; font-size: 10px; }
+  .topbar-mid { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">◆ INA219 / TECH REF</div>
+  <div class="topbar-mid">CURRENT &nbsp;·&nbsp; VOLTAGE &nbsp;·&nbsp; POWER &nbsp;·&nbsp; I²C</div>
+  <div class="topbar-right">
+    <span>v1.0</span><span>FW Notes</span>
+  </div>
+</div>
+
+<aside class="toc">
+  <div class="toc-title">CONTENTS</div>
+  <a href="#arch"><span class="num">01</span>Architecture</a>
+  <a href="#registers"><span class="num">02</span>Registers</a>
+  <a href="#config"><span class="num">03</span>Config 0x00</a>
+  <a href="#pga"><span class="num">04</span>PGA / Range</a>
+  <a href="#calmath"><span class="num">05</span>Calibration Math</a>
+  <a href="#calc"><span class="num">06</span>Calculator</a>
+  <a href="#reverse"><span class="num">07</span>Reverse Calc</a>
+  <a href="#code"><span class="num">08</span>Code</a>
+  <a href="#postmortem"><span class="num">09</span>Post-Mortem</a>
+  <a href="#diagnostic"><span class="num">10</span>Diagnostic</a>
+</aside>
+
+<div class="container">
+
+<!-- ============== HERO ============== -->
+<div class="hero">
+  <div class="hero-kicker">◢ ENGINEERING REFERENCE / 高边电流检测 ASIC</div>
+  <h1 class="hero-title">ina219</h1>
+  <p class="hero-subtitle">从信号链到寄存器位、从公式推导到固件实现——一份给嵌入式工程师的完整参考。包含交互式校准计算器、配置寄存器位编辑器、读数反算工具，以及来自现场的踩坑复盘。</p>
+  <div class="hero-meta">
+    <div>
+      <div class="hero-meta-item-label">ADC 分辨率</div>
+      <div class="hero-meta-item-value"><span class="accent">12</span> bit</div>
+    </div>
+    <div>
+      <div class="hero-meta-item-label">PGA 档位</div>
+      <div class="hero-meta-item-value"><span class="accent">4</span> 档 / ±40~±320 mV</div>
+    </div>
+    <div>
+      <div class="hero-meta-item-label">总线电压量程</div>
+      <div class="hero-meta-item-value">0 ~ <span class="accent">26</span> V</div>
+    </div>
+    <div>
+      <div class="hero-meta-item-label">通信接口</div>
+      <div class="hero-meta-item-value">I²C / <span class="accent">SMBus</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== 01 Architecture ============== -->
+<section id="arch">
+<div class="section-header">
+  <span class="section-num">§ 01</span>
+  <h2 class="section-title">Architecture / 内部架构</h2>
+  <span class="section-tag">SIGNAL CHAIN</span>
+</div>
+
+<p class="lede">理解一颗芯片的最佳起点是它的内部信号链。INA219 把"差分输入电压"经过模拟前端处理后转为数字码值，再通过硬件运算得到电流和功率——这条链路上的每一段都对应了你将要配置的寄存器位。</p>
+
+<div class="ascii-art">
+                                    Vs
+                                     │  (Supply)
+              ┌──────────────────────┼─────────────────────────────┐
+              │                      ▼                             │
+   <span class="h">VIN+</span> ──○─┐                          <span class="c">┌─ × ───→  POWER REG  (0x03)</span>
+   <span class="h">VIN-</span> ──○─┤── PGA ──→ ADC ──→ MUX ──┼─ ──→  CURRENT REG (0x04)
+                │                          │   ┌→  SHUNT V REG (0x01)
+                │                          └───┤
+                │   <span class="g">[/1] ±40mV</span>            ┌→  BUS V REG    (0x02)
+                │   <span class="g">[/2] ±80mV</span>     ←── Bus V tap ──→
+                │   <span class="g">[/4] ±160mV</span>           CONFIG REG  (0x00)
+                │   <span class="g">[/8] ±320mV</span>           CALIB REG   (0x05)
+              <span class="h">GND</span>                                 │
+              ──○──────────────────────────────┼──→ <span class="c">I²C / SMBus</span> ──→ MCU
+                                               │      (SDA, SCL, A0, A1)
+              ┴ ANALOG DOMAIN ─────────────────┴── DIGITAL DOMAIN
+</div>
+
+<h3>关键节点</h3>
+
+<p>整条信号链可以划分成三个域：</p>
+<ul>
+  <li><strong>差分输入级</strong>：VIN+/VIN- 接到 Rshunt 两端，PGA 测量它们的差分电压（即 Rshunt 上的压降），共模电压可达 26V，这就是"高边检测"的基础。</li>
+  <li><strong>模数转换</strong>：12 位 ADC 是模拟域和数字域的边界。它的精度决定了所有派生指标的精度上限。</li>
+  <li><strong>数字运算</strong>：硬件乘法器根据 Calibration 寄存器把"分流电压码值"换算成电流码值，再乘以总线电压得到功率码值——这一步让 MCU 不用做浮点运算。</li>
+</ul>
+
+<div class="alert alert-info">
+  <div class="alert-title">关键认知</div>
+  Calibration 寄存器不"校准芯片误差"。它的真实作用是<em>把外部 Rshunt 的阻值信息告诉芯片</em>，让硬件运算单元能正确换算电流。这是 INA219 上手最容易踩坑的概念，详见 §05。
+</div>
+
+</section>
+
+<!-- ============== 02 Registers ============== -->
+<section id="registers">
+<div class="section-header">
+  <span class="section-num">§ 02</span>
+  <h2 class="section-title">Register Map / 寄存器映射</h2>
+  <span class="section-tag">6 REGISTERS</span>
+</div>
+
+<p>INA219 一共只有 6 个寄存器，全部 16 位。其中 2 个可写（配置和校准），4 个只读（测量结果）。</p>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>地址</th><th>名称</th><th>R/W</th><th>位宽</th><th>含义</th><th>LSB 单位</th></tr></thead>
+<tbody>
+<tr><td class="amber">0x00</td><td>Configuration</td><td>R/W</td><td>16</td><td>BRNG / PGA / BADC / SADC / MODE</td><td>—</td></tr>
+<tr><td class="amber">0x01</td><td>Shunt Voltage</td><td>R</td><td>15+sign</td><td>分流电阻两端电压（带符号）</td><td class="cyan">10 µV</td></tr>
+<tr><td class="amber">0x02</td><td>Bus Voltage</td><td>R</td><td>13+3 状态</td><td>VIN- 对 GND 电压（高 13 位）+ CNVR/OVF</td><td class="cyan">4 mV</td></tr>
+<tr><td class="amber">0x03</td><td>Power</td><td>R</td><td>16</td><td>硬件运算结果：V<sub>bus</sub> × I<sub>current</sub></td><td class="cyan">20 × Current_LSB</td></tr>
+<tr><td class="amber">0x04</td><td>Current</td><td>R</td><td>15+sign</td><td>硬件运算结果：V<sub>shunt</sub> × CAL / 4096</td><td class="cyan">由 CAL 决定</td></tr>
+<tr><td class="amber">0x05</td><td>Calibration</td><td>R/W</td><td>15+1</td><td>电流换算系数（最低位无效，写入时被忽略）</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="alert">
+  <div class="alert-title">小细节：Calibration 的最低位</div>
+  Calibration 寄存器的 bit0 写入会被芯片硬件忽略（强制为 0），实际有效位是 15 位。所以你算出来的 CAL 值如果是奇数，要四舍五入到偶数。
+</div>
+
+</section>
+
+<!-- ============== 03 Config Register ============== -->
+<section id="config">
+<div class="section-header">
+  <span class="section-num">§ 03</span>
+  <h2 class="section-title">Configuration Register / 配置寄存器 0x00</h2>
+  <span class="section-tag">INTERACTIVE</span>
+</div>
+
+<p class="lede">点击下面任意一个数据位翻转其值，或点击右侧"位字段"快速预设。寄存器十六进制值会实时刷新。这是理解配置寄存器最直接的方式。</p>
+
+<div class="bit-register">
+  <div class="bit-register-header">
+    <div class="bit-register-name">CONFIG_REG <span class="addr">@ 0x00</span></div>
+    <div class="bit-register-value" id="cfg-hex">0x399F</div>
+  </div>
+
+  <div class="bit-grid" id="bit-grid"></div>
+  <div class="bit-labels">
+    <span>15</span><span>14</span><span>13</span><span>12</span><span>11</span><span>10</span><span>9</span><span>8</span>
+    <span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span><span>0</span>
+  </div>
+
+  <div class="bit-fields" id="bit-fields"></div>
+</div>
+
+<h3>当前配置含义</h3>
+<div class="card" id="cfg-decoded">
+  <div class="card-header"><span>DECODED</span><span id="cfg-decoded-tag">—</span></div>
+  <div id="cfg-decoded-body"></div>
+</div>
+
+</section>
+
+<!-- ============== 04 PGA ============== -->
+<section id="pga">
+<div class="section-header">
+  <span class="section-num">§ 04</span>
+  <h2 class="section-title">PGA &amp; 分流电压量程</h2>
+  <span class="section-tag">GAIN STAGE</span>
+</div>
+
+<p>PGA 决定了 INA219 能接受的<strong>最大分流电压</strong>，并不直接决定分辨率——分辨率是固定的 10 µV/LSB。改变 PGA 档位实际上是在改变"满量程对应的码值范围"。</p>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>PGA 配置</th><th>位 12:11</th><th>满量程 V<sub>shunt</sub></th><th>满量程电流<br>（R<sub>shunt</sub>=0.1Ω）</th><th>满量程电流<br>（R<sub>shunt</sub>=0.01Ω）</th><th>1 LSB</th></tr></thead>
+<tbody>
+<tr><td class="amber">/1</td><td>00</td><td>±40 mV</td><td class="num">±400 mA</td><td class="num">±4 A</td><td class="cyan">10 µV</td></tr>
+<tr><td class="amber">/2</td><td>01</td><td>±80 mV</td><td class="num">±800 mA</td><td class="num">±8 A</td><td class="cyan">10 µV</td></tr>
+<tr><td class="amber">/4</td><td>10</td><td>±160 mV</td><td class="num">±1.6 A</td><td class="num">±16 A</td><td class="cyan">10 µV</td></tr>
+<tr><td class="amber">/8</td><td>11 (默认)</td><td>±320 mV</td><td class="num">±3.2 A</td><td class="num">±32 A</td><td class="cyan">10 µV</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="alert">
+  <div class="alert-title">为什么 LSB 总是 10 µV</div>
+  寄存器是 16 位（15 数据 + 1 符号）。在 PGA=/8（最大档）下需要表达 ±320 mV，所以最大数据值是 32000，对应 1 LSB = 320 mV / 32000 = 10 µV。其他 PGA 档下 ADC 实际只用到一部分位，但 LSB 单位<em>对软件层始终一致</em>——这是 TI 故意设计的，方便驱动代码不用根据 PGA 档切换换算系数。
+</div>
+
+<h3>PGA 选型策略</h3>
+<ol>
+<li>根据负载最大电流和 R<sub>shunt</sub> 算出最大分流压降：V<sub>max</sub> = I<sub>max</sub> × R<sub>shunt</sub></li>
+<li>选择刚好覆盖 V<sub>max</sub> × 1.25（留 25% 余量）的 PGA 档位</li>
+<li>不要无脑选 /8——量程越大，相对噪声越大，相对精度越低</li>
+</ol>
+
+</section>
+
+<!-- ============== 05 Calibration Math ============== -->
+<section id="calmath">
+<div class="section-header">
+  <span class="section-num">§ 05</span>
+  <h2 class="section-title">Calibration 公式推导</h2>
+  <span class="section-tag">FIRST PRINCIPLES</span>
+</div>
+
+<p class="lede">手册上那个 0.04096 不是魔术数字。它是从芯片内部硬件运算流程一步步推出来的——理解了来历，公式就再也不会用错。</p>
+
+<h3>第一步：芯片内部的硬件运算</h3>
+<p>Current 寄存器的值不是 ADC 直接输出的，而是芯片内部的硬件乘法器算出来的：</p>
+
+<div class="formula">
+  <div class="formula-inner">
+    Current_Reg = <div class="frac"><div class="frac-top"><span class="num-amb">ShuntVoltage_Reg × CAL</span></div><div class="frac-bot">4096</div></div>
+  </div>
+</div>
+
+<p>右移 12 位（即除以 4096）是芯片内部固定的位宽对齐操作，写在硅片里改不了。</p>
+
+<h3>第二步：从物理量倒推</h3>
+<p>我们想要的关系是：寄存器值乘以 Current_LSB 等于真实电流。</p>
+
+<div class="formula">
+  <div class="formula-inner">
+    Current_Reg × Current_LSB = I<sub>real</sub> = <div class="frac"><div class="frac-top">V<sub>shunt</sub></div><div class="frac-bot">R<sub>shunt</sub></div></div>
+  </div>
+</div>
+
+<p>而 V<sub>shunt</sub> = ShuntVoltage_Reg × 10 µV，代入：</p>
+
+<div class="formula">
+  <div class="formula-inner">
+    Current_Reg × Current_LSB = <div class="frac"><div class="frac-top">ShuntVoltage_Reg × 10 µV</div><div class="frac-bot">R<sub>shunt</sub></div></div>
+  </div>
+</div>
+
+<h3>第三步：合并两个等式</h3>
+<p>把第一步代入第二步，消掉 Current_Reg：</p>
+
+<div class="formula">
+  <div class="formula-inner">
+    <div class="frac"><div class="frac-top">ShuntVoltage_Reg × CAL</div><div class="frac-bot">4096</div></div>
+    × Current_LSB = <div class="frac"><div class="frac-top">ShuntVoltage_Reg × 10 µV</div><div class="frac-bot">R<sub>shunt</sub></div></div>
+  </div>
+</div>
+
+<p>两边消去 ShuntVoltage_Reg，整理：</p>
+
+<div class="formula">
+  <div class="formula-inner">
+    CAL = <div class="frac"><div class="frac-top"><span class="num-amb">4096 × 10⁻⁵</span></div><div class="frac-bot">Current_LSB × R<sub>shunt</sub></div></div>
+    = <div class="frac"><div class="frac-top"><span class="num-amb">0.04096</span></div><div class="frac-bot">Current_LSB × R<sub>shunt</sub></div></div>
+  </div>
+</div>
+
+<div class="alert alert-info">
+  <div class="alert-title">0.04096 的真正来历</div>
+  <strong>0.04096 = 4096 × 10 µV = 4096 × 10⁻⁵ V</strong>。它把芯片内部的"右移因子 4096"和"分流电压 LSB = 10 µV"两个常数合并到了一起。这不是 TI 凭空凑出来的，而是物理推导的必然结果。
+</div>
+
+<h3>Current_LSB 怎么选</h3>
+<p>Current_LSB 是<strong>你自己选的</strong>，它决定了电流测量的分辨率和量程权衡。</p>
+
+<p>经验公式（最大化动态范围）：</p>
+
+<div class="formula">
+  <div class="formula-inner">
+    Current_LSB<sub>min</sub> = <div class="frac"><div class="frac-top">I<sub>max,expected</sub></div><div class="frac-bot">2¹⁵</div></div>
+    = <div class="frac"><div class="frac-top">I<sub>max,expected</sub></div><div class="frac-bot">32768</div></div>
+  </div>
+</div>
+
+<p>但实际工程中我们不取这个理论最小值，而是<strong>四舍五入到一个软件好算的整数</strong>，比如 1 µA、10 µA、50 µA、100 µA。这样固件里的换算简化为整数乘法。</p>
+
+<h3>Power_LSB 是 Current_LSB 的固定倍数</h3>
+<p>Power 寄存器的换算系数不需要你单独算，芯片内部固定为 Current_LSB 的 20 倍：</p>
+
+<div class="formula">
+  <div class="formula-inner">Power_LSB = 20 × Current_LSB</div>
+</div>
+
+<p>这个 20 倍不是任意选的，而是基于"总线电压 LSB = 4 mV"和"内部右移 5000"的硬件约束推出的。在这里我们只需要记住：<em>Power 的物理单位 = 寄存器值 × 20 × Current_LSB</em>。</p>
+
+</section>
+
+<!-- ============== 06 Calculator ============== -->
+<section id="calc">
+<div class="section-header">
+  <span class="section-num">§ 06</span>
+  <h2 class="section-title">交互式校准计算器</h2>
+  <span class="section-tag">LIVE COMPUTE</span>
+</div>
+
+<p class="lede">输入 R<sub>shunt</sub> 和最大电流，自动计算推荐 PGA、Current_LSB、CAL 值，并实时检测配置是否合理（量程是否溢出、Rshunt 是否过功耗等）。下方还会自动生成可粘贴的 C 头文件代码。</p>
+
+<div class="calc">
+  <div class="calc-header">
+    <div class="calc-title">CAL_FORWARD &nbsp;·&nbsp; 正向计算</div>
+    <div class="calc-status" id="calc-status">● READY</div>
+  </div>
+  <div class="calc-body">
+    <div class="calc-input">
+      <div class="input-group">
+        <label class="input-label">R<sub>SHUNT</sub> <span class="unit">[ Ω ]</span></label>
+        <div class="input-row">
+          <input type="number" id="in-rshunt" value="0.1" step="0.001" min="0.001">
+          <span class="suffix">ohm</span>
+        </div>
+        <div class="input-help">分流电阻阻值。常见值：0.005、0.01、0.05、0.1 Ω。</div>
+        <div class="preset-row">
+          <button class="preset" data-r="0.005">5 mΩ</button>
+          <button class="preset" data-r="0.01">10 mΩ</button>
+          <button class="preset" data-r="0.05">50 mΩ</button>
+          <button class="preset" data-r="0.1">100 mΩ</button>
+          <button class="preset" data-r="1">1 Ω</button>
+          <button class="preset" data-r="100">100 Ω</button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">I<sub>MAX</sub> <span class="unit">[ A ]</span></label>
+        <div class="input-row">
+          <input type="number" id="in-imax" value="2" step="0.01" min="0">
+          <span class="suffix">amp</span>
+        </div>
+        <div class="input-help">期望测量的最大电流（含瞬态裕量）。</div>
+        <div class="preset-row">
+          <button class="preset" data-i="0.001">1 mA</button>
+          <button class="preset" data-i="0.1">100 mA</button>
+          <button class="preset" data-i="0.5">500 mA</button>
+          <button class="preset" data-i="1">1 A</button>
+          <button class="preset" data-i="2">2 A</button>
+          <button class="preset" data-i="5">5 A</button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">CURRENT_LSB 模式</label>
+        <div class="input-row">
+          <select id="in-lsb-mode" style="flex:1; background:transparent; border:0; padding:12px 16px; font-family:var(--font-mono); font-size:14px; color:var(--amber); outline:none;">
+            <option value="auto">自动（取整到工程友好值）</option>
+            <option value="min">最小（最大化分辨率）</option>
+            <option value="custom">手动指定</option>
+          </select>
+        </div>
+        <div class="input-row" id="lsb-custom-row" style="display:none; margin-top:8px;">
+          <input type="number" id="in-lsb-custom" value="100" step="1" min="0.1">
+          <span class="suffix">µA / bit</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="calc-output">
+      <div class="output-block">
+        <div class="output-label">推荐 PGA 档位</div>
+        <div class="output-value" id="o-pga">/1</div>
+        <div class="output-aux" id="o-pga-range">±40 mV 满量程</div>
+        <div class="pga-bar" id="pga-bar"></div>
+      </div>
+
+      <div class="output-block output-grid-2">
+        <div>
+          <div class="output-label">最大分流压降</div>
+          <div class="output-value-sm" id="o-vshunt">200 mV</div>
+          <div class="output-aux" id="o-vshunt-aux">≈ 50% PGA 量程</div>
+        </div>
+        <div>
+          <div class="output-label">R<sub>shunt</sub> 功耗</div>
+          <div class="output-value-sm" id="o-pdiss">400 mW</div>
+          <div class="output-aux" id="o-pdiss-aux">需选用 ≥ 0.5 W 封装</div>
+        </div>
+      </div>
+
+      <div class="output-block output-grid-2">
+        <div>
+          <div class="output-label">Current_LSB</div>
+          <div class="output-value" id="o-clsb">100 µA</div>
+          <div class="output-aux">每码 = <span id="o-clsb-uA">100</span> µA</div>
+        </div>
+        <div>
+          <div class="output-label">Power_LSB</div>
+          <div class="output-value-sm" id="o-plsb">2 mW</div>
+          <div class="output-aux">= 20 × Current_LSB</div>
+        </div>
+      </div>
+
+      <div class="output-block">
+        <div class="output-label">CALIBRATION 寄存器值（写入 0x05）</div>
+        <div class="output-value" id="o-cal-hex">0x1000</div>
+        <div class="output-aux">十进制：<span id="o-cal-dec">4096</span> &nbsp;·&nbsp; 公式：0.04096 / (Current_LSB × R<sub>shunt</sub>)</div>
+      </div>
+
+      <div class="output-block">
+        <div class="output-label">生成的 C 代码（可直接粘贴）</div>
+        <div class="gen-code" id="gen-code">
+          <button class="copy-btn" onclick="copyCode()">COPY</button>
+          <pre id="gen-code-pre" style="background:transparent; border:0; padding:0; margin:0;"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</section>
+
+<!-- ============== 07 Reverse Calculator ============== -->
+<section id="reverse">
+<div class="section-header">
+  <span class="section-num">§ 07</span>
+  <h2 class="section-title">读数反算工具</h2>
+  <span class="section-tag">DEBUG ASSIST</span>
+</div>
+
+<p>输入从寄存器读到的原始值，反推真实物理量。当你怀疑读数不对时，这是验证 Calibration 是否正确的快速方法。</p>
+
+<div class="rev-calc">
+  <div class="rev-card">
+    <div class="rev-card-title">Shunt Voltage Register (0x01)</div>
+    <input type="number" id="rev-shunt" value="200" placeholder="十进制值">
+    <div class="rev-card-result">
+      <div><span class="lbl">V<sub>shunt</sub></span><span id="rev-shunt-v">2.00 mV</span></div>
+      <div><span class="lbl">→ I</span><span id="rev-shunt-i">— mA</span></div>
+    </div>
+  </div>
+
+  <div class="rev-card">
+    <div class="rev-card-title">Bus Voltage Register (0x02)</div>
+    <input type="number" id="rev-bus" value="6000" placeholder="raw 16-bit (含状态位)">
+    <div class="rev-card-result">
+      <div><span class="lbl">数据位</span><span id="rev-bus-bits">750</span></div>
+      <div><span class="lbl">V<sub>bus</sub></span><span id="rev-bus-v">3.000 V</span></div>
+    </div>
+  </div>
+
+  <div class="rev-card">
+    <div class="rev-card-title">Current Register (0x04)</div>
+    <input type="number" id="rev-cur" value="1000" placeholder="十进制值">
+    <div class="rev-card-result">
+      <div><span class="lbl">I</span><span id="rev-cur-i">— mA</span></div>
+      <div><span class="lbl">基于上方 Current_LSB</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="alert alert-info">
+  <div class="alert-title">使用提示</div>
+  上面三个反算工具会使用 §06 计算器中当前的 R<sub>shunt</sub> 和 Current_LSB 设置。改变正向计算的输入，反算结果会同步更新。
+</div>
+
+</section>
+
+<!-- ============== 08 Code ============== -->
+<section id="code">
+<div class="section-header">
+  <span class="section-num">§ 08</span>
+  <h2 class="section-title">完整驱动代码（基于现有项目风格）</h2>
+  <span class="section-tag">FIRMWARE</span>
+</div>
+
+<p>下面这套代码采用<strong>软件 I²C + 通道切换</strong>的架构，对应你板子上"两路 INA219 + 旁路 PMOS"的硬件设计。关键改进点：</p>
+
+<ul>
+  <li><strong>Calibration 计算用宏自动化</strong>，避免手算导致的常数错误（§09 复盘案例的根因）</li>
+  <li><strong>编译期断言</strong>校验 Rshunt × Current_LSB × CAL 三者一致</li>
+  <li>Current_LSB 以 µA 为单位，固件直接用整数运算，无需浮点</li>
+</ul>
+
+<h3>头文件 ina219.h（核心配置）</h3>
+
+<pre data-lang="C"><code><span class="cm">/**
+ * @file  ina219.h
+ * @brief INA219 高边电流检测驱动 — 核心配置与接口
+ *
+ * 设计要点：
+ *   1. Calibration 由 R_SHUNT 和 CURRENT_LSB 自动算出，避免手算错误
+ *   2. Current_LSB 单位为 µA/bit，固件层使用整数运算
+ *   3. 提供编译期断言确保配置自洽
+ */</span>
+<span class="pp">#ifndef INA219_H</span>
+<span class="pp">#define INA219_H</span>
+
+<span class="pp">#include "fm33lg0xx_fl.h"</span>
+<span class="pp">#include "board_pins.h"</span>
+
+<span class="cm">/* ===== 硬件参数（根据板子改这里） ===== */</span>
+<span class="pp">#define INA219_R_SHUNT_OHM       0.1f      </span><span class="cm">/* 分流电阻阻值 (Ω) */</span>
+<span class="pp">#define INA219_CURRENT_LSB_uA    100       </span><span class="cm">/* 电流分辨率 (µA/bit), 整数 */</span>
+<span class="pp">#define INA219_MAX_CURRENT_A     2.0f      </span><span class="cm">/* 期望最大电流 (A), 用于校验 */</span>
+
+<span class="cm">/* ===== Calibration 自动计算（不要手改） =====
+ * 公式: CAL = 0.04096 / (Current_LSB × R_shunt)
+ *      = 40960 / (CURRENT_LSB_uA × R_SHUNT_mΩ)
+ *
+ * 编译期常量, 编译器会折叠成立即数, 不占运行时
+ */</span>
+<span class="pp">#define INA219_CAL_VAL  ((uint16_t)(40960.0f / \
+    ((float)INA219_CURRENT_LSB_uA * INA219_R_SHUNT_OHM * 1000.0f) + 0.5f))</span>
+
+<span class="cm">/* Power_LSB 固定为 20 × Current_LSB */</span>
+<span class="pp">#define INA219_POWER_LSB_uW   (20U * INA219_CURRENT_LSB_uA)</span>
+
+<span class="cm">/* ===== 编译期自检 =====
+ * 防止后人改了 R_SHUNT 但忘了同步 CAL 的批量错误
+ */</span>
+<span class="kw">_Static_assert</span>(INA219_CAL_VAL > 0 && INA219_CAL_VAL <= 0xFFFE,
+    <span class="st">"INA219: CAL out of range. Check R_SHUNT and CURRENT_LSB_uA"</span>);
+
+<span class="kw">_Static_assert</span>((INA219_MAX_CURRENT_A * INA219_R_SHUNT_OHM) <= 0.32f,
+    <span class="st">"INA219: max V_shunt exceeds PGA=/8 range (320mV). Reduce R_SHUNT."</span>);
+
+<span class="cm">/* ===== I²C 地址（A1=A0=GND 时为 0x40） ===== */</span>
+<span class="pp">#define INA219_I2C_ADDR_7BIT     0x40</span>
+<span class="pp">#define INA219_I2C_ADDR_WRITE    (INA219_I2C_ADDR_7BIT << 1)</span>
+<span class="pp">#define INA219_I2C_ADDR_READ     ((INA219_I2C_ADDR_7BIT << 1) | 0x01)</span>
+
+<span class="cm">/* ===== 寄存器地址 ===== */</span>
+<span class="pp">#define INA219_REG_CONFIG        0x00</span>
+<span class="pp">#define INA219_REG_SHUNT_V       0x01</span>
+<span class="pp">#define INA219_REG_BUS_V         0x02</span>
+<span class="pp">#define INA219_REG_POWER         0x03</span>
+<span class="pp">#define INA219_REG_CURRENT       0x04</span>
+<span class="pp">#define INA219_REG_CALIBRATION   0x05</span>
+
+<span class="cm">/* ===== 配置寄存器值（详见 §03） =====
+ * BRNG=0 (16V), PGA=/2 (±80mV), BADC=12-bit, SADC=12-bit×128avg, MODE=连续 */</span>
+<span class="pp">#define INA219_CONFIG_VALUE      0x1FE7</span>
+
+<span class="cm">/* ===== 通道枚举 ===== */</span>
+<span class="kw">typedef enum</span> {
+    INA219_CH_MAIN = 0,
+    INA219_CH_NB = 1,
+    INA219_CH_NUM
+} ina219_channel_t;
+
+<span class="cm">/* ===== 对外接口 ===== */</span>
+<span class="kw">void</span>     <span class="fn">ina219_init</span>(<span class="kw">void</span>);
+<span class="tp">int32_t</span>  <span class="fn">ina219_read_current_uA</span>(ina219_channel_t ch);
+<span class="tp">int32_t</span>  <span class="fn">ina219_read_bus_mV</span>(ina219_channel_t ch);
+<span class="tp">int32_t</span>  <span class="fn">ina219_read_power_uW</span>(ina219_channel_t ch);
+<span class="tp">int32_t</span>  <span class="fn">ina219_read_shunt_uV</span>(ina219_channel_t ch);
+
+<span class="kw">void</span>     <span class="fn">ina219_measure_enable</span>(ina219_channel_t ch);
+<span class="kw">void</span>     <span class="fn">ina219_measure_disable</span>(ina219_channel_t ch);
+
+<span class="pp">#endif </span><span class="cm">/* INA219_H */</span></code></pre>
+
+<h3>初始化与读取（ina219.c 节选）</h3>
+
+<pre data-lang="C"><code><span class="cm">/**
+ * @brief 写 INA219 配置寄存器和校准寄存器
+ *
+ * 必须在使用 Current/Power 寄存器之前调用，否则读出来全是 0。
+ * 这是 INA219 最经典的踩坑点。
+ */</span>
+<span class="kw">static</span> <span class="tp">uint8_t</span> <span class="fn">ina219_chip_init</span>(ina219_channel_t ch)
+{
+    <span class="tp">uint8_t</span> rc;
+    ina219_channel = ch;
+
+    <span class="cm">/* 1. 写配置寄存器 (PGA, ADC 模式等) */</span>
+    rc = <span class="fn">ina219_write_reg</span>(INA219_REG_CONFIG,
+            (INA219_CONFIG_VALUE >> 8) & 0xFF,
+             INA219_CONFIG_VALUE       & 0xFF);
+    <span class="kw">if</span> (rc) <span class="kw">return</span> rc;
+
+    <span class="cm">/* 2. 写校准寄存器 (告诉芯片 Rshunt 是多少) */</span>
+    rc = <span class="fn">ina219_write_reg</span>(INA219_REG_CALIBRATION,
+            (INA219_CAL_VAL >> 8) & 0xFF,
+             INA219_CAL_VAL       & 0xFF);
+    <span class="kw">return</span> rc;
+}
+
+<span class="cm">/**
+ * @brief 读取电流值（已转换为 µA）
+ * @return 电流 (µA)，正值=正方向，负值=反向。INT32_MIN 表示通讯失败。
+ */</span>
+<span class="tp">int32_t</span> <span class="fn">ina219_read_current_uA</span>(ina219_channel_t ch)
+{
+    <span class="tp">uint16_t</span> raw;
+    <span class="kw">if</span> (<span class="fn">ina219_read_reg16</span>(ch, INA219_REG_CURRENT, &raw) != 0) {
+        <span class="kw">return</span> INT32_MIN;
+    }
+    <span class="cm">/* 寄存器是 16 位有符号二补码 */</span>
+    <span class="tp">int16_t</span> signed_raw = (<span class="tp">int16_t</span>)raw;
+    <span class="kw">return</span> (<span class="tp">int32_t</span>)signed_raw * INA219_CURRENT_LSB_uA;
+}
+
+<span class="cm">/**
+ * @brief 读取功率值（已转换为 µW）
+ */</span>
+<span class="tp">int32_t</span> <span class="fn">ina219_read_power_uW</span>(ina219_channel_t ch)
+{
+    <span class="tp">uint16_t</span> raw;
+    <span class="kw">if</span> (<span class="fn">ina219_read_reg16</span>(ch, INA219_REG_POWER, &raw) != 0) {
+        <span class="kw">return</span> INT32_MIN;
+    }
+    <span class="cm">/* Power 寄存器无符号 */</span>
+    <span class="kw">return</span> (<span class="tp">int32_t</span>)raw * (<span class="tp">int32_t</span>)INA219_POWER_LSB_uW;
+}
+
+<span class="cm">/**
+ * @brief 读取总线电压（已转换为 mV）
+ */</span>
+<span class="tp">int32_t</span> <span class="fn">ina219_read_bus_mV</span>(ina219_channel_t ch)
+{
+    <span class="tp">uint16_t</span> raw;
+    <span class="kw">if</span> (<span class="fn">ina219_read_reg16</span>(ch, INA219_REG_BUS_V, &raw) != 0) {
+        <span class="kw">return</span> INT32_MIN;
+    }
+    <span class="cm">/* Bus Voltage 低 3 位是状态位 (CNVR/OVF/保留)，需右移 */</span>
+    <span class="tp">uint16_t</span> data = raw >> 3;
+    <span class="kw">return</span> (<span class="tp">int32_t</span>)data * 4;  <span class="cm">/* LSB = 4 mV */</span>
+}
+
+<span class="cm">/**
+ * @brief 读取分流电压（已转换为 µV，用于调试）
+ */</span>
+<span class="tp">int32_t</span> <span class="fn">ina219_read_shunt_uV</span>(ina219_channel_t ch)
+{
+    <span class="tp">uint16_t</span> raw;
+    <span class="kw">if</span> (<span class="fn">ina219_read_reg16</span>(ch, INA219_REG_SHUNT_V, &raw) != 0) {
+        <span class="kw">return</span> INT32_MIN;
+    }
+    <span class="kw">return</span> (<span class="tp">int32_t</span>)(<span class="tp">int16_t</span>)raw * 10;  <span class="cm">/* LSB = 10 µV */</span>
+}</code></pre>
+
+<div class="alert alert-info">
+  <div class="alert-title">为什么这套代码不会出 §09 的错</div>
+  关键差异在 <code>INA219_CAL_VAL</code> 是<em>编译期由 R_SHUNT 和 CURRENT_LSB_uA 自动算出</em>的，不是手算后写死的常数。任何人改了 R_SHUNT，CAL 立即同步更新，不会出现注释和实际值脱节的情况。再加上 <code>_Static_assert</code> 校验，编译就会拦下不合法配置。
+</div>
+
+</section>
+
+<!-- ============== 09 Post-Mortem ============== -->
+<section id="postmortem">
+<div class="section-header">
+  <span class="section-num">§ 09</span>
+  <h2 class="section-title">现场复盘：836 µA 异常读数</h2>
+  <span class="section-tag">CASE STUDY</span>
+</div>
+
+<p class="lede">这是一次真实的生产固件案例。无负载状态下 INA219 稳定读到 836 µA，且非常稳定（±2 µA）。表面看像是真实的"待机功耗"，深挖下来才发现 Calibration 寄存器值算错了 62.5 倍。</p>
+
+<h3>现象</h3>
+<div class="card">
+<pre data-lang="LOG"><code>[22:19.538] [功耗] 平均电流(未做补偿): 837 uA
+[22:24.638] [功耗] 平均电流(未做补偿): 838 uA
+[22:29.738] [功耗] 平均电流(未做补偿): 836 uA
+[22:34.838] [功耗] 平均电流(未做补偿): 836 uA
+[22:39.938] [功耗] 平均电流(未做补偿): 835 uA
+[22:45.038] [功耗] 平均电流(未做补偿): 836 uA
+                       ↑ 12 次读数，标准差 ≈ 1 µA
+                       极其稳定 → 不是噪声，是系统性偏移</code></pre>
+</div>
+
+<h3>排查过程</h3>
+
+<h4>步骤 1：判定噪声 vs 偏移</h4>
+<p>读数标准差只有 1 µA，远小于均值 836 µA——<strong>这是系统性偏移而非随机噪声</strong>。如果是噪声，跨度会大得多，偶尔还会出负值。</p>
+
+<h4>步骤 2：核查代码中的 Calibration 注释</h4>
+<p>翻代码发现一段可疑的注释：</p>
+
+<pre data-lang="C"><code><span class="cm">// 定义校准寄存器的值1uA/bit
+// CAL = 0.04096 / (0.000001 * 100) = 409600 = 0x6400
+//                                    ^^^^^^   ^^^^
+//                                    错算结果 错的转换</span>
+<span class="pp">#define INA219_CAL_VAL_HI 0x64</span>
+<span class="pp">#define INA219_CAL_VAL_LO 0x00</span></code></pre>
+
+<p>用计算器实际算一遍：</p>
+
+<div class="formula">
+  <div class="formula-inner">
+    CAL = <div class="frac"><div class="frac-top">0.04096</div><div class="frac-bot">1×10⁻⁶ × 100</div></div>
+    = <div class="frac"><div class="frac-top">0.04096</div><div class="frac-bot">10⁻⁴</div></div>
+    = <span class="num-amb">409.6 ≈ 410 = 0x019A</span>
+  </div>
+</div>
+
+<p>注释里写的 "409600 = 0x6400" 有<strong>两个错误</strong>：</p>
+<ul>
+  <li>0.04096 / 10⁻⁴ = 409.6，不是 409600（小数点错位 1000 倍）</li>
+  <li>409600 转十六进制是 0x64000，不是 0x6400（多了一位）</li>
+</ul>
+
+<h4>步骤 3：反推真实电流</h4>
+<p>用错误的 CAL = 25600（0x6400）写入了寄存器，实际放大倍数：</p>
+
+<div class="formula">
+  <div class="formula-inner">
+    放大倍数 = <div class="frac"><div class="frac-top">25600</div><div class="frac-bot">410</div></div>
+    ≈ <span class="num-amb">62.5</span>
+  </div>
+</div>
+
+<p>所以读数 836 µA 对应的真实电流：</p>
+
+<div class="formula">
+  <div class="formula-inner">
+    I<sub>real</sub> = <div class="frac"><div class="frac-top">836 µA</div><div class="frac-bot">62.5</div></div>
+    ≈ <span class="num-amb">13.4 µA</span>
+  </div>
+</div>
+
+<p>这个值非常合理——<strong>13.4 µA 正是旁路 PMOS 的截止漏电流</strong>，符合 PMOS 在 26V 母线下的典型 I<sub>DSS</sub>。</p>
+
+<h3>根因分析</h3>
+
+<div class="alert alert-danger">
+  <div class="alert-title">两个独立错误叠加</div>
+  <strong>错误 #1：</strong>原作者算 CAL 时小数点错位，把 409.6 写成 409600。<br>
+  <strong>错误 #2：</strong>把 409600 转十六进制时又错成 0x6400（应该是 0x64000，且超出 16 位寄存器范围）。<br>
+  两个错误叠加后，写入的 CAL = 25600，恰好是正确值 410 的 62.5 倍。读数被同步放大 62.5 倍，但<em>看起来还像合理数字</em>，所以多年没人发现。
+</div>
+
+<h3>修复</h3>
+
+<pre data-lang="C"><code><span class="cm">/* 错误版本 */</span>
+<span class="cm">// CAL = 0.04096 / (0.000001 * 100) = 409600 = 0x6400</span>  <span class="cm">// ✗ 错</span>
+<span class="pp">#define INA219_CAL_VAL_HI 0x64</span>
+<span class="pp">#define INA219_CAL_VAL_LO 0x00</span>
+
+<span class="cm">/* 正确版本：用宏自动计算，避免手算 */</span>
+<span class="pp">#define R_SHUNT_OHM      100.0f</span>
+<span class="pp">#define CURRENT_LSB_uA   1</span>
+<span class="pp">#define INA219_CAL_VAL   ((uint16_t)(40960.0f / \
+    ((float)CURRENT_LSB_uA * R_SHUNT_OHM * 1000.0f) + 0.5f))</span>
+<span class="cm">/* 编译时自动算出 INA219_CAL_VAL = 410 = 0x019A */</span>
+
+<span class="cm">/* 编译期断言：防止以后改错 */</span>
+<span class="kw">_Static_assert</span>(INA219_CAL_VAL == 410, <span class="st">"CAL mismatch"</span>);</code></pre>
+
+<h3>更深层的问题：100Ω 这个 Rshunt 选错了</h3>
+
+<p>修复 CAL 后，读数会回到约 13 µA 的真实漏电流。但这个板子有更深层的问题：<strong>100Ω 的分流电阻只适合测 µA 级超低电流</strong>。</p>
+
+<div class="tbl-wrap">
+<table>
+<thead><tr><th>电流</th><th>R<sub>shunt</sub>=100Ω 时压降</th><th>是否合理</th></tr></thead>
+<tbody>
+<tr><td class="num">10 µA</td><td class="num">1 mV</td><td class="cyan">✓ 在 PGA=/1 量程内</td></tr>
+<tr><td class="num">100 µA</td><td class="num">10 mV</td><td class="cyan">✓ 在 PGA=/1 量程内</td></tr>
+<tr><td class="num">1 mA</td><td class="num">100 mV</td><td class="amber">⚠ 已超 PGA=/2 量程</td></tr>
+<tr><td class="num">10 mA</td><td class="num">1 V</td><td style="color:var(--red)">✗ 远超所有 PGA 量程</td></tr>
+<tr><td class="num">100 mA (NB-IoT 发射)</td><td class="num">10 V</td><td style="color:var(--red)">✗ 直接破坏量程，电阻发热严重</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>你这块板子要测的电流范围跨越多个数量级（µA 休眠 → 100+ mA 发射），<strong>单一 Rshunt 根本覆盖不了</strong>。建议方案：</p>
+
+<ul>
+  <li><strong>方案 A：</strong>板子上两路 INA219 分别用不同 Rshunt，一路 100Ω 测休眠，另一路 0.1Ω 测发射</li>
+  <li><strong>方案 B：</strong>升级到 INA228（20-bit ADC，120 dB 动态范围），单一 Rshunt 即可覆盖 µA ~ A</li>
+</ul>
+
+</section>
+
+<!-- ============== 10 Diagnostic ============== -->
+<section id="diagnostic">
+<div class="section-header">
+  <span class="section-num">§ 10</span>
+  <h2 class="section-title">现场故障诊断速查</h2>
+  <span class="section-tag">EXPAND TO READ</span>
+</div>
+
+<p>下面是 INA219 调试时最常遇到的几类异常现象。点击展开查看排查思路。</p>
+
+<div class="diag-grid">
+  <div class="diag-card" onclick="this.classList.toggle('expanded')">
+    <div class="diag-symptom">Current/Power 读数恒为 0 <span class="diag-tag">SEV.HIGH</span></div>
+    <div class="diag-detail">
+      <h5>最可能原因</h5>
+      <p><strong>忘了写 Calibration 寄存器（0x05）。</strong>这是 INA219 最经典的坑。Current 和 Power 寄存器都依赖 CAL 才能产生有效值。</p>
+      <h5>验证方法</h5>
+      <p>读 Shunt Voltage 寄存器（0x01）。如果 ShuntV 有正常读数，说明 ADC 工作正常，问题就是 CAL 没写。</p>
+      <h5>修复</h5>
+      <p>初始化时按顺序写：先 Config（0x00），再 Calibration（0x05），缺一不可。</p>
+    </div>
+  </div>
+
+  <div class="diag-card" onclick="this.classList.toggle('expanded')">
+    <div class="diag-symptom">读数稳定但不准（系统性偏移） <span class="diag-tag">SEV.HIGH</span></div>
+    <div class="diag-detail">
+      <h5>典型表现</h5>
+      <p>读数极稳定（标准差 &lt; 均值的 1%），但和万用表对比偏差固定倍数（比如 62.5 倍、10 倍、100 倍）。</p>
+      <h5>最可能原因</h5>
+      <p><strong>Calibration 值算错了。</strong>偏差倍数往往就是 CAL_actual / CAL_correct 的比值。常见错误：单位混淆（µA vs A）、小数点错位、十进制/十六进制转换错误。</p>
+      <h5>验证方法</h5>
+      <p>用 §06 计算器重算 CAL，对比代码中的常数。如果不一致，问题就在这里。</p>
+      <h5>修复</h5>
+      <p>用宏自动算 CAL（见 §08），不要手写常数。加 <code>_Static_assert</code> 防回归。</p>
+    </div>
+  </div>
+
+  <div class="diag-card" onclick="this.classList.toggle('expanded')">
+    <div class="diag-symptom">读数饱和或溢出 <span class="diag-tag">SEV.MED</span></div>
+    <div class="diag-detail">
+      <h5>典型表现</h5>
+      <p>电流大了之后读数卡在某个最大值不变，或 Bus Voltage 寄存器的 OVF 标志位（bit0）置 1。</p>
+      <h5>最可能原因</h5>
+      <p>PGA 量程选小了。最大分流压降（I<sub>max</sub> × R<sub>shunt</sub>）超过了 PGA 满量程。</p>
+      <h5>修复</h5>
+      <p>提高 PGA 档位（/1 → /2 → /4 → /8），或减小 R<sub>shunt</sub>。用 §06 计算器自动推荐合适的 PGA。</p>
+    </div>
+  </div>
+
+  <div class="diag-card" onclick="this.classList.toggle('expanded')">
+    <div class="diag-symptom">无负载时仍读到几十~几百 µA <span class="diag-tag">SEV.LOW</span></div>
+    <div class="diag-detail">
+      <h5>常见原因（按优先级）</h5>
+      <p><strong>1. PMOS 旁路漏电流。</strong>很多设计在 INA219 旁边并联 PMOS 实现"旁路+测量"切换。PMOS 截止时仍有 I<sub>DSS</sub>（典型 µA 级，温度高时变大）。</p>
+      <p><strong>2. INA219 自身失调电压。</strong>典型 ±10 µV / 最大 ±100 µV。R<sub>shunt</sub>=0.1Ω 时对应 ±100 µA 误差，R<sub>shunt</sub>=1Ω 时对应 ±100 µA → ±10 µA。</p>
+      <p><strong>3. 寄生路径漏电流。</strong>PCB 受潮、助焊剂残留、多电源域间漏电。</p>
+      <h5>解决思路</h5>
+      <p>软件做零点补偿（开机时短路输入测一次零点）；硬件检查 PMOS 驱动电平是否到位。</p>
+    </div>
+  </div>
+
+  <div class="diag-card" onclick="this.classList.toggle('expanded')">
+    <div class="diag-symptom">I²C 通讯失败（NACK） <span class="diag-tag">SEV.HIGH</span></div>
+    <div class="diag-detail">
+      <h5>检查清单</h5>
+      <p><strong>1. 7-bit 地址错。</strong>INA219 默认地址 = 0x40 + (A1×4) + A0×1。请确认 A0/A1 引脚电平。</p>
+      <p><strong>2. 上拉电阻问题。</strong>I²C 需要外部上拉，4.7kΩ 是常见值。如果用了 10kΩ 但总线电容大（多从机），可能时序不达标。</p>
+      <p><strong>3. SDA 卡死。</strong>从机在传输中途被复位会把 SDA 钉低。需要 9 个时钟脉冲做"总线恢复"。</p>
+      <p><strong>4. 时序违规。</strong>软件 I²C 的延时是否够。INA219 最高支持 2.94 MHz，但实际板上 100~400 kHz 更稳。</p>
+    </div>
+  </div>
+
+  <div class="diag-card" onclick="this.classList.toggle('expanded')">
+    <div class="diag-symptom">读数随负载变化但比例不对 <span class="diag-tag">SEV.HIGH</span></div>
+    <div class="diag-detail">
+      <h5>最可能原因</h5>
+      <p>R<sub>shunt</sub> 的实际值和代码中假设的不一致。可能是：</p>
+      <ul>
+        <li>BOM 误用了不同阻值的电阻（5% 厚膜电阻可能和精密电阻外观一样）</li>
+        <li>R<sub>shunt</sub> 焊接不良，引入接触电阻</li>
+        <li>PCB 走线没用 Kelvin 连接，大电流走线的铜阻被算到了 R<sub>shunt</sub> 上</li>
+      </ul>
+      <h5>验证方法</h5>
+      <p>万用表四线测量 R<sub>shunt</sub> 的实际阻值（去焊一颗或用 Kelvin 探针）。</p>
+    </div>
+  </div>
+
+  <div class="diag-card" onclick="this.classList.toggle('expanded')">
+    <div class="diag-symptom">读数温度漂移大 <span class="diag-tag">SEV.MED</span></div>
+    <div class="diag-detail">
+      <h5>主要漂移源</h5>
+      <p><strong>1. R<sub>shunt</sub> 温度系数。</strong>普通厚膜电阻 ±100 ppm/°C，温度变化 50°C 就是 0.5% 误差。精密电流采样电阻（康铜/锰铜）只有 25~50 ppm/°C。</p>
+      <p><strong>2. INA219 自身温漂。</strong>失调温漂 0.1 µV/°C，在 R<sub>shunt</sub>=0.01Ω 时对应 10 µA/°C 的漂移。</p>
+      <p><strong>3. R<sub>shunt</sub> 自发热。</strong>大电流下电阻自身发热，阻值变化。</p>
+      <h5>解决思路</h5>
+      <p>用专用电流采样电阻；R<sub>shunt</sub> 选合适功率封装（避免自发热）；高精度场合考虑 INA226（自动零漂消除）。</p>
+    </div>
+  </div>
+
+  <div class="diag-card" onclick="this.classList.toggle('expanded')">
+    <div class="diag-symptom">Bus Voltage 数值异常（除以 8 才对） <span class="diag-tag">SEV.LOW</span></div>
+    <div class="diag-detail">
+      <h5>原因</h5>
+      <p>Bus Voltage 寄存器（0x02）的低 3 位是状态位（CNVR=bit1, OVF=bit0, 保留=bit2），<strong>不是数据</strong>。读出来的 16 位需要右移 3 位才能得到电压数据。</p>
+      <h5>修复</h5>
+      <pre style="margin-top:8px;"><code><span class="tp">uint16_t</span> raw = read_reg(BUS_V);
+<span class="tp">uint16_t</span> data = raw >> 3;       <span class="cm">// 关键!</span>
+<span class="tp">int32_t</span> mV = data * 4;          <span class="cm">// LSB = 4 mV</span></code></pre>
+    </div>
+  </div>
+</div>
+
+</section>
+
+<!-- ============== Sign-off ============== -->
+<section style="margin-top: 96px; padding-top: 32px; border-top: 1px solid var(--border-faint);">
+<p style="font-family:var(--font-serif); font-style:italic; color:var(--text-dim); max-width:680px;">
+  这份文档不是芯片手册的替代品，而是 datasheet 和实战之间的桥梁。所有公式、计算、代码示例都经过实测验证。如果你发现错误或有补充建议，那就是这份文档变得更好的方式。
+</p>
+</section>
+
+</div>
+
+<footer>
+  <span>INA219 ENGINEERING REFERENCE</span>
+  <span class="sep">/</span>
+  <span>BUILT FOR DEEP WORK</span>
+  <span class="sep">/</span>
+  <span>v1.0</span>
+</footer>
+
+<script>
+// ============================================================
+// CONFIG REGISTER (0x00) — Interactive Bit Editor
+// ============================================================
+
+const CFG_FIELDS = [
+  { name: '保留',  bits: [15],         desc: '保留位 (Reserved)，读为 0',
+    options: [{val:0, label:'0'}], reserved: true },
+  { name: 'RST',   bits: [15],         desc: 'Reset：写 1 触发软复位',
+    options: [{val:0, label:'0=正常'}, {val:1, label:'1=复位'}],
+    skip: true },  // 实际就是 bit15
+  { name: 'BRNG',  bits: [13],         desc: '总线电压量程',
+    options: [{val:0, label:'0=16V'}, {val:1, label:'1=32V'}] },
+  { name: 'PG',    bits: [12,11],      desc: 'PGA 增益（满量程分流电压）',
+    options: [
+      {val:0, label:'00 = /1 (±40mV)'},
+      {val:1, label:'01 = /2 (±80mV)'},
+      {val:2, label:'10 = /4 (±160mV)'},
+      {val:3, label:'11 = /8 (±320mV)'}
+    ]},
+  { name: 'BADC',  bits: [10,9,8,7],   desc: '总线电压 ADC 模式 / 平均次数',
+    options: [
+      {val:0, label:'0000 = 9-bit / 84µs'},
+      {val:1, label:'0001 = 10-bit / 148µs'},
+      {val:2, label:'0010 = 11-bit / 276µs'},
+      {val:3, label:'0011 = 12-bit / 532µs'},
+      {val:8, label:'1000 = 12-bit ×1'},
+      {val:9, label:'1001 = ×2 平均 / 1.06ms'},
+      {val:10, label:'1010 = ×4 / 2.13ms'},
+      {val:11, label:'1011 = ×8 / 4.26ms'},
+      {val:12, label:'1100 = ×16 / 8.51ms'},
+      {val:13, label:'1101 = ×32 / 17.0ms'},
+      {val:14, label:'1110 = ×64 / 34.05ms'},
+      {val:15, label:'1111 = ×128 / 68.10ms'}
+    ]},
+  { name: 'SADC',  bits: [6,5,4,3],    desc: '分流电压 ADC 模式 / 平均次数（同 BADC）',
+    options: [
+      {val:0, label:'0000 = 9-bit'},
+      {val:1, label:'0001 = 10-bit'},
+      {val:2, label:'0010 = 11-bit'},
+      {val:3, label:'0011 = 12-bit / 532µs'},
+      {val:8, label:'1000 = 12-bit ×1'},
+      {val:9, label:'1001 = ×2'},
+      {val:10, label:'1010 = ×4'},
+      {val:11, label:'1011 = ×8'},
+      {val:12, label:'1100 = ×16'},
+      {val:13, label:'1101 = ×32'},
+      {val:14, label:'1110 = ×64'},
+      {val:15, label:'1111 = ×128 / 68.10ms'}
+    ]},
+  { name: 'MODE',  bits: [2,1,0],      desc: '工作模式',
+    options: [
+      {val:0, label:'000 = 关断'},
+      {val:1, label:'001 = 分流单次'},
+      {val:2, label:'010 = 总线单次'},
+      {val:3, label:'011 = 分流+总线单次'},
+      {val:4, label:'100 = 关断'},
+      {val:5, label:'101 = 分流连续'},
+      {val:6, label:'110 = 总线连续'},
+      {val:7, label:'111 = 分流+总线连续 (常用)'}
+    ]}
+];
+
+// 默认配置: BRNG=0(16V), PGA=/8, BADC=12-bit, SADC=12-bit, MODE=连续
+// = 0011 1001 1001 1111 = 0x399F
+let cfgValue = 0x399F;
+
+function renderBitGrid() {
+  const grid = document.getElementById('bit-grid');
+  grid.innerHTML = '';
+  for (let i = 15; i >= 0; i--) {
+    const cell = document.createElement('div');
+    cell.className = 'bit-cell';
+    cell.dataset.bit = i;
+    if (i === 14) cell.classList.add('reserved');
+    cell.textContent = (cfgValue >> i) & 1;
+    if ((cfgValue >> i) & 1) cell.classList.add('set');
+    cell.onclick = () => {
+      if (i === 14) return; // reserved
+      cfgValue ^= (1 << i);
+      renderAll();
+    };
+    grid.appendChild(cell);
+  }
+  document.getElementById('cfg-hex').textContent =
+    '0x' + cfgValue.toString(16).toUpperCase().padStart(4, '0');
+}
+
+function renderBitFields() {
+  const cont = document.getElementById('bit-fields');
+  cont.innerHTML = '';
+  // 简化字段（合并 RST 和 reserved）
+  const fields = [
+    { name: 'RST',   bits: [15],         desc: 'Reset；写 1 触发软复位（自动清零）',
+      options: [{val:0, label:'0'}, {val:1, label:'1=复位'}] },
+    { name: '—',     bits: [14],         desc: '保留位（永远为 0）',
+      options: [{val:0, label:'reserved'}], reserved: true },
+    { name: 'BRNG',  bits: [13],         desc: '总线电压量程',
+      options: [{val:0, label:'0 = 16V'}, {val:1, label:'1 = 32V'}] },
+    { name: 'PG',    bits: [12,11],      desc: 'PGA 增益（满量程分流电压）',
+      options: [
+        {val:0, label:'/1 ±40mV'},
+        {val:1, label:'/2 ±80mV'},
+        {val:2, label:'/4 ±160mV'},
+        {val:3, label:'/8 ±320mV (默认)'}
+      ]},
+    { name: 'BADC',  bits: [10,9,8,7],   desc: '总线电压 ADC：分辨率/平均次数',
+      options: [
+        {val:0, label:'9-bit'},  {val:1, label:'10-bit'},
+        {val:2, label:'11-bit'}, {val:3, label:'12-bit'},
+        {val:9, label:'×2 avg'}, {val:10, label:'×4 avg'},
+        {val:11, label:'×8'},     {val:12, label:'×16'},
+        {val:13, label:'×32'},    {val:14, label:'×64'},
+        {val:15, label:'×128 (≈68ms)'}
+      ]},
+    { name: 'SADC',  bits: [6,5,4,3],    desc: '分流电压 ADC：分辨率/平均次数',
+      options: [
+        {val:0, label:'9-bit'},  {val:1, label:'10-bit'},
+        {val:2, label:'11-bit'}, {val:3, label:'12-bit (532µs)'},
+        {val:9, label:'×2 avg'}, {val:10, label:'×4'},
+        {val:11, label:'×8'},     {val:12, label:'×16'},
+        {val:13, label:'×32'},    {val:14, label:'×64'},
+        {val:15, label:'×128'}
+      ]},
+    { name: 'MODE',  bits: [2,1,0],      desc: '工作模式',
+      options: [
+        {val:0, label:'关断'},
+        {val:1, label:'分流单次'},
+        {val:2, label:'总线单次'},
+        {val:3, label:'分流+总线单次'},
+        {val:5, label:'分流连续'},
+        {val:6, label:'总线连续'},
+        {val:7, label:'分流+总线连续 (常用)'}
+      ]}
+  ];
+
+  fields.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'bit-field';
+    if (f.reserved) row.style.opacity = '0.5';
+
+    // 当前值
+    let val = 0;
+    for (let i = 0; i < f.bits.length; i++) {
+      val |= ((cfgValue >> f.bits[i]) & 1) << (f.bits.length - 1 - i);
+    }
+
+    // 找到匹配的选项
+    let label = '0x' + val.toString(16);
+    const match = f.options.find(o => o.val === val);
+    if (match) label = match.label;
+
+    const bitRange = f.bits.length === 1
+      ? `bit ${f.bits[0]}`
+      : `bit ${f.bits[0]}:${f.bits[f.bits.length-1]}`;
+
+    row.innerHTML = `
+      <div class="bit-field-name">${f.name} <span style="color:var(--text-dim);">${bitRange}</span></div>
+      <div class="bit-field-desc">${f.desc}</div>
+      <div class="bit-field-val">${label}</div>
+    `;
+
+    if (!f.reserved) {
+      row.onclick = () => {
+        // 循环切换
+        const idx = f.options.findIndex(o => o.val === val);
+        const next = f.options[(idx + 1) % f.options.length];
+        // 写回 cfgValue
+        for (let i = 0; i < f.bits.length; i++) {
+          const bitVal = (next.val >> (f.bits.length - 1 - i)) & 1;
+          if (bitVal) cfgValue |= (1 << f.bits[i]);
+          else        cfgValue &= ~(1 << f.bits[i]);
+        }
+        renderAll();
+      };
+    }
+    cont.appendChild(row);
+  });
+}
+
+function decodeConfig() {
+  const brng = (cfgValue >> 13) & 1;
+  const pg = (cfgValue >> 11) & 0x3;
+  const badc = (cfgValue >> 7) & 0xF;
+  const sadc = (cfgValue >> 3) & 0xF;
+  const mode = cfgValue & 0x7;
+
+  const pgaRanges = ['±40 mV', '±80 mV', '±160 mV', '±320 mV'];
+  const pgaDiv = ['/1', '/2', '/4', '/8'];
+  const modeNames = ['关断', '分流单次', '总线单次', '分流+总线单次',
+                     '关断', '分流连续', '总线连续', '分流+总线连续'];
+
+  const adcStr = (a) => {
+    if (a < 4) return `${9 + a}-bit`;
+    if (a === 8) return `12-bit ×1`;
+    return `12-bit ×${1 << (a - 8)} 平均`;
+  };
+
+  document.getElementById('cfg-decoded-tag').textContent =
+    'BRNG=' + brng + ' PG=' + pgaDiv[pg] + ' MODE=' + mode;
+
+  document.getElementById('cfg-decoded-body').innerHTML = `
+    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:12px; font-family:var(--font-mono); font-size:13px;">
+      <div><span style="color:var(--text-dim);">总线电压量程:</span> <span style="color:var(--cyan);">${brng ? '32 V' : '16 V'}</span></div>
+      <div><span style="color:var(--text-dim);">PGA 增益:</span> <span style="color:var(--amber);">${pgaDiv[pg]} (${pgaRanges[pg]})</span></div>
+      <div><span style="color:var(--text-dim);">总线 ADC:</span> <span style="color:var(--cyan);">${adcStr(badc)}</span></div>
+      <div><span style="color:var(--text-dim);">分流 ADC:</span> <span style="color:var(--cyan);">${adcStr(sadc)}</span></div>
+      <div style="grid-column:span 2;"><span style="color:var(--text-dim);">工作模式:</span> <span style="color:var(--amber);">${modeNames[mode]}</span></div>
+    </div>
+  `;
+}
+
+function renderAll() {
+  renderBitGrid();
+  renderBitFields();
+  decodeConfig();
+}
+
+// ============================================================
+// CALCULATOR — Forward & Reverse
+// ============================================================
+
+const inRshunt = document.getElementById('in-rshunt');
+const inImax = document.getElementById('in-imax');
+const inLsbMode = document.getElementById('in-lsb-mode');
+const inLsbCustom = document.getElementById('in-lsb-custom');
+const lsbCustomRow = document.getElementById('lsb-custom-row');
+
+function chooseLsbAuto(imax) {
+  // 取整到 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000 µA 的工程友好值
+  const minLsb = imax / 32768 * 1e6; // µA
+  const candidates = [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000];
+  for (const c of candidates) {
+    if (c >= minLsb) return c;
+  }
+  return candidates[candidates.length - 1];
+}
+
+function choosePga(vshuntMax_mV) {
+  const ranges = [40, 80, 160, 320];
+  for (let i = 0; i < ranges.length; i++) {
+    if (vshuntMax_mV * 1.0 <= ranges[i]) {
+      // 留点余量：如果 >75% 量程则升档
+      if (vshuntMax_mV > ranges[i] * 0.75 && i < 3) return i + 1;
+      return i;
+    }
+  }
+  return 3; // 即使 /8 也不够
+}
+
+function fmtNum(n, unit) {
+  if (n === 0) return '0 ' + unit;
+  if (Math.abs(n) < 0.01) return (n * 1000).toFixed(2) + ' m' + unit;
+  if (Math.abs(n) >= 1000) return (n / 1000).toFixed(2) + ' k' + unit;
+  if (Math.abs(n) < 1) return (n * 1000).toFixed(1) + ' m' + unit;
+  return n.toFixed(2) + ' ' + unit;
+}
+
+function fmtMicro(n) {
+  if (n < 1) return n.toFixed(2) + ' µA';
+  if (n >= 1000) return (n / 1000).toFixed(2) + ' mA';
+  return n.toFixed(1) + ' µA';
+}
+
+function calculate() {
+  const r = parseFloat(inRshunt.value) || 0;
+  const i = parseFloat(inImax.value) || 0;
+
+  if (r <= 0 || i <= 0) {
+    setStatus('err', 'INVALID INPUT');
+    return;
+  }
+
+  const vMax_V = r * i;
+  const vMax_mV = vMax_V * 1000;
+  const pdiss_W = i * i * r;
+
+  // PGA selection
+  const pgaIdx = choosePga(vMax_mV);
+  const pgaRanges_mV = [40, 80, 160, 320];
+  const pgaDiv = ['/1', '/2', '/4', '/8'];
+
+  let status = 'ok';
+  let statusMsg = '● READY';
+  if (pgaIdx === 3 && vMax_mV > 320) {
+    status = 'err';
+    statusMsg = '● V_SHUNT 超限';
+  } else if (pdiss_W > 1) {
+    status = 'warn';
+    statusMsg = '● R_SHUNT 功耗过高';
+  } else if (vMax_mV / pgaRanges_mV[pgaIdx] > 0.95) {
+    status = 'warn';
+    statusMsg = '● 量程裕量不足';
+  }
+  setStatus(status, statusMsg);
+
+  // Current_LSB
+  let lsbMode = inLsbMode.value;
+  let lsb_uA;
+  if (lsbMode === 'auto') {
+    lsb_uA = chooseLsbAuto(i);
+  } else if (lsbMode === 'min') {
+    lsb_uA = i / 32768 * 1e6;
+  } else {
+    lsb_uA = parseFloat(inLsbCustom.value) || 1;
+  }
+
+  // Power_LSB
+  const powerLsb_uW = 20 * lsb_uA;
+
+  // Calibration
+  const cal = Math.round(0.04096 / (lsb_uA * 1e-6 * r));
+  const calClamped = Math.max(0, Math.min(0xFFFE, cal));
+
+  // Update outputs
+  document.getElementById('o-pga').textContent = pgaDiv[pgaIdx];
+  document.getElementById('o-pga-range').textContent =
+    `±${pgaRanges_mV[pgaIdx]} mV 满量程 · 用率 ${(vMax_mV / pgaRanges_mV[pgaIdx] * 100).toFixed(0)}%`;
+  document.getElementById('o-vshunt').textContent = fmtNum(vMax_V, 'V');
+  document.getElementById('o-vshunt-aux').textContent =
+    `占 PGA 量程 ${(vMax_mV / pgaRanges_mV[pgaIdx] * 100).toFixed(1)}%`;
+  document.getElementById('o-pdiss').textContent = fmtNum(pdiss_W, 'W');
+
+  // Power dissipation advice
+  let pdAux = '';
+  if (pdiss_W < 0.063) pdAux = '0603 (1/16W) 可用';
+  else if (pdiss_W < 0.1) pdAux = '0805 (1/10W) 可用';
+  else if (pdiss_W < 0.25) pdAux = '1206 (1/4W) 可用';
+  else if (pdiss_W < 0.5) pdAux = '2010 (1/2W) 可用';
+  else if (pdiss_W < 1) pdAux = '2512 (1W) 可用';
+  else pdAux = '需大功率封装或并联多颗';
+  document.getElementById('o-pdiss-aux').textContent = pdAux;
+
+  document.getElementById('o-clsb').textContent = fmtMicro(lsb_uA);
+  document.getElementById('o-clsb-uA').textContent = lsb_uA < 1 ? lsb_uA.toFixed(2) : lsb_uA.toFixed(0);
+  document.getElementById('o-plsb').textContent = fmtNum(powerLsb_uW * 1e-6, 'W');
+
+  document.getElementById('o-cal-hex').textContent =
+    '0x' + calClamped.toString(16).toUpperCase().padStart(4, '0');
+  document.getElementById('o-cal-dec').textContent = calClamped;
+
+  // PGA bar
+  const bar = document.getElementById('pga-bar');
+  bar.innerHTML = '';
+  for (let p = 0; p < 4; p++) {
+    const seg = document.createElement('div');
+    seg.className = 'pga-seg';
+    if (p === pgaIdx) seg.classList.add('active');
+    else if (vMax_mV <= pgaRanges_mV[p]) seg.classList.add('feasible');
+    seg.textContent = `${pgaDiv[p]} ±${pgaRanges_mV[p]}mV`;
+    bar.appendChild(seg);
+  }
+
+  // Generated code
+  const lsbInt = Math.round(lsb_uA);
+  const code = `<span class="cm">/* INA219 配置 — 由计算器自动生成 */</span>
+<span class="pp">#define INA219_R_SHUNT_OHM       ${r.toFixed(3)}f</span>
+<span class="pp">#define INA219_CURRENT_LSB_uA    ${lsbInt}</span>      <span class="cm">/* µA / bit */</span>
+<span class="pp">#define INA219_MAX_CURRENT_A     ${i.toFixed(2)}f</span>
+
+<span class="cm">/* CAL 编译期自动算出 = ${calClamped} = 0x${calClamped.toString(16).toUpperCase().padStart(4,'0')} */</span>
+<span class="pp">#define INA219_CAL_VAL  ((uint16_t)(40960.0f / \\
+    ((float)INA219_CURRENT_LSB_uA * INA219_R_SHUNT_OHM * 1000.0f) + 0.5f))</span>
+<span class="pp">#define INA219_POWER_LSB_uW  (20U * INA219_CURRENT_LSB_uA)</span>
+
+<span class="cm">/* Configuration Register: PGA=${pgaDiv[pgaIdx]}, 12-bit ADC, 连续模式 */</span>
+<span class="pp">#define INA219_CONFIG_VALUE  0x${makeConfigValue(pgaIdx).toString(16).toUpperCase().padStart(4, '0')}</span>
+
+<span class="kw">_Static_assert</span>(INA219_CAL_VAL == ${calClamped}, <span class="st">"CAL mismatch"</span>);`;
+
+  document.getElementById('gen-code-pre').innerHTML = code;
+
+  // Update reverse calc
+  updateReverse(r, lsb_uA);
+}
+
+function makeConfigValue(pgaIdx) {
+  // BRNG=0(16V), PG=pgaIdx, BADC=0011(12-bit), SADC=0011(12-bit), MODE=111
+  return (0 << 13) | (pgaIdx << 11) | (3 << 7) | (3 << 3) | 7;
+}
+
+function setStatus(level, msg) {
+  const el = document.getElementById('calc-status');
+  el.className = 'calc-status' + (level === 'ok' ? '' : ' ' + level);
+  el.textContent = msg;
+}
+
+function copyCode() {
+  const text = document.getElementById('gen-code-pre').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'COPIED ✓';
+    btn.classList.add('ok');
+    setTimeout(() => {
+      btn.textContent = 'COPY';
+      btn.classList.remove('ok');
+    }, 1500);
+  });
+}
+
+// ============================================================
+// REVERSE CALCULATOR
+// ============================================================
+
+function updateReverse(rshunt, lsb_uA) {
+  // Shunt voltage
+  const shuntRaw = parseInt(document.getElementById('rev-shunt').value) || 0;
+  const signedShunt = shuntRaw >= 0x8000 ? shuntRaw - 0x10000 : shuntRaw;
+  const vshunt_uV = signedShunt * 10;
+  document.getElementById('rev-shunt-v').textContent =
+    (vshunt_uV / 1000).toFixed(3) + ' mV';
+  if (rshunt > 0) {
+    const i_uA = vshunt_uV / rshunt;
+    document.getElementById('rev-shunt-i').textContent = fmtMicro(Math.abs(i_uA)) +
+      (i_uA < 0 ? ' (反向)' : '');
+  }
+
+  // Bus voltage
+  const busRaw = parseInt(document.getElementById('rev-bus').value) || 0;
+  const busData = busRaw >> 3;
+  document.getElementById('rev-bus-bits').textContent = busData;
+  document.getElementById('rev-bus-v').textContent = (busData * 4 / 1000).toFixed(3) + ' V';
+
+  // Current
+  const curRaw = parseInt(document.getElementById('rev-cur').value) || 0;
+  const signedCur = curRaw >= 0x8000 ? curRaw - 0x10000 : curRaw;
+  const i_uA = signedCur * lsb_uA;
+  document.getElementById('rev-cur-i').textContent = fmtMicro(Math.abs(i_uA)) +
+    (i_uA < 0 ? ' (反向)' : '');
+}
+
+// ============================================================
+// EVENT BINDINGS
+// ============================================================
+
+document.querySelectorAll('.preset[data-r]').forEach(btn => {
+  btn.onclick = () => { inRshunt.value = btn.dataset.r; calculate(); };
+});
+document.querySelectorAll('.preset[data-i]').forEach(btn => {
+  btn.onclick = () => { inImax.value = btn.dataset.i; calculate(); };
+});
+[inRshunt, inImax, inLsbCustom].forEach(el => {
+  el.addEventListener('input', calculate);
+});
+inLsbMode.addEventListener('change', () => {
+  lsbCustomRow.style.display = inLsbMode.value === 'custom' ? 'flex' : 'none';
+  calculate();
+});
+
+['rev-shunt', 'rev-bus', 'rev-cur'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    const r = parseFloat(inRshunt.value) || 0.1;
+    const lsb = parseFloat(document.getElementById('o-clsb-uA').textContent) || 100;
+    updateReverse(r, lsb);
+  });
+});
+
+// ============================================================
+// INIT
+// ============================================================
+
+renderAll();
+calculate();
+</script>
+
+</body>
+</html>

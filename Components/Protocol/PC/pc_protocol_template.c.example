@@ -1,0 +1,95 @@
+/**
+ * @file pc_protocol_template.c
+ * @brief 上位机协议模板 - 作为添加新协议的参考
+ * @version 1.0.0
+ * @date 2024-12
+ *
+ * @section usage 使用说明
+ * 1. 复制此文件并重命名为 pc_protocol_xxx.c
+ * 2. 修改协议名称和实现
+ * 3. 在 pc_protocol.h 中添加 extern 声明
+ * 4. 在初始化时注册协议
+ */
+
+#define LOG_TAG "pc_tmpl"
+
+#include "pc_protocol.h"
+#include <elog.h>
+#include <string.h>
+
+/*============ 内部变量 ============*/
+
+static ProtocolSendFunc s_send_func = NULL;
+static ProtocolEventCallback s_event_callback = NULL;
+
+/*============ 内部函数声明 ============*/
+
+static bool template_init(void);
+static ProtocolResult template_parse(uint8_t *data, uint16_t len);
+static bool template_send_cmd(uint16_t cmd, void *param);
+static void template_on_response(uint16_t code, const uint8_t *data, uint16_t len);
+static void template_set_send_func(ProtocolSendFunc func);
+static void template_set_event_callback(ProtocolEventCallback callback);
+
+/*============ 协议接口实例 ============*/
+
+// TODO: 修改协议名称
+const ProtocolInterface template_pc_protocol = {
+    .name = "template",                         // TODO: 修改协议名称
+    .init = template_init,
+    .parse = template_parse,
+    .send_cmd = template_send_cmd,
+    .on_response = template_on_response,
+    .set_send_func = template_set_send_func,
+    .set_event_callback = template_set_event_callback,
+};
+
+/*============ 接口实现 ============*/
+
+static bool template_init(void)
+{
+    log_i("模板协议初始化");
+    // TODO: 添加初始化代码
+    return true;
+}
+
+static ProtocolResult template_parse(uint8_t *data, uint16_t len)
+{
+    log_d("模板协议解析, 长度=%d", len);
+
+    // TODO: 实现协议解析逻辑
+    // 1. 查找帧头
+    // 2. 验证长度
+    // 3. 验证校验和
+    // 4. 根据命令码分发处理
+
+    return PROTOCOL_RESULT_OK;
+}
+
+static bool template_send_cmd(uint16_t cmd, void *param)
+{
+    log_d("模板协议发送命令: 0x%04X", cmd);
+
+    // TODO: 实现命令发送逻辑
+    // 1. 构建帧
+    // 2. 计算校验
+    // 3. 调用 s_send_func 发送
+
+    return true;
+}
+
+static void template_on_response(uint16_t code, const uint8_t *data, uint16_t len)
+{
+    log_d("模板协议收到响应: 0x%04X", code);
+    // TODO: 处理响应
+}
+
+static void template_set_send_func(ProtocolSendFunc func)
+{
+    s_send_func = func;
+}
+
+static void template_set_event_callback(ProtocolEventCallback callback)
+{
+    s_event_callback = callback;
+}

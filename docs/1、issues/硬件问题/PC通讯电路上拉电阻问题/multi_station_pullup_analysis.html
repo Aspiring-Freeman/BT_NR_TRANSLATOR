@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>多工位 Wired-OR 总线上拉电阻分析 · R87: 2K → 20K</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+    --bg: #0d1017;
+    --surface: #141923;
+    --surface-2: #1a1f2c;
+    --border: #242b3a;
+    --border-strong: #313a4f;
+    --text: #f0ebe0;
+    --text-2: #9a958a;
+    --text-3: #5e5b54;
+    --copper: #d4a574;
+    --copper-glow: rgba(212, 165, 116, 0.15);
+    --bad: #e85d75;
+    --bad-soft: rgba(232, 93, 117, 0.12);
+    --good: #6db89c;
+    --good-soft: rgba(109, 184, 156, 0.12);
+    --warn: #e8a85d;
+    --line: rgba(240, 235, 224, 0.08);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Fraunces', 'Noto Serif SC', serif;
+    font-feature-settings: "ss01", "ss02";
+    line-height: 1.7;
+    background-image:
+        radial-gradient(ellipse at top, rgba(212, 165, 116, 0.04) 0%, transparent 50%),
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 100% 100%, 32px 32px, 32px 32px;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 80px 32px 120px;
+}
+
+/* ============ HEADER ============ */
+.eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--copper);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.eyebrow::before {
+    content: '';
+    width: 32px;
+    height: 1px;
+    background: var(--copper);
+}
+
+h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 28px;
+    font-variation-settings: 'opsz' 144;
+}
+
+h1 em {
+    font-style: italic;
+    color: var(--copper);
+    font-weight: 300;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    color: var(--text-2);
+    max-width: 640px;
+    margin-bottom: 48px;
+    font-weight: 300;
+}
+
+.meta-bar {
+    display: flex;
+    gap: 32px;
+    padding: 20px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 80px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+.meta-item { display: flex; flex-direction: column; gap: 4px; }
+.meta-label { color: var(--text-3); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; }
+.meta-value { color: var(--text); }
+
+/* ============ SECTIONS ============ */
+section {
+    margin-bottom: 96px;
+    scroll-margin-top: 40px;
+}
+
+h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 2rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+}
+
+h2 .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--copper);
+    letter-spacing: 0.15em;
+    font-weight: 500;
+}
+
+h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.3rem;
+    font-weight: 500;
+    margin: 36px 0 16px;
+    color: var(--text);
+}
+
+p { margin-bottom: 16px; color: var(--text); }
+
+p.lead {
+    font-size: 1.15rem;
+    color: var(--text-2);
+    margin-bottom: 32px;
+    font-weight: 300;
+}
+
+strong { color: var(--copper); font-weight: 500; }
+em { font-style: italic; color: var(--text-2); }
+
+code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88em;
+    background: var(--surface-2);
+    padding: 2px 8px;
+    border-radius: 3px;
+    color: var(--copper);
+    border: 1px solid var(--border);
+}
+
+/* ============ HERO STATEMENT ============ */
+.hero-statement {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: stretch;
+    gap: 0;
+    margin: 48px 0 64px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.hero-cell {
+    padding: 36px 32px;
+    text-align: center;
+}
+
+.hero-cell.bad {
+    background: var(--bad-soft);
+    border-right: 1px solid var(--bad);
+}
+.hero-cell.good {
+    background: var(--good-soft);
+    border-left: 1px solid var(--good);
+}
+
+.hero-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-2);
+    padding: 0 24px;
+    color: var(--copper);
+    font-size: 24px;
+}
+
+.hero-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.4rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.hero-cell.bad .hero-value { color: var(--bad); }
+.hero-cell.good .hero-value { color: var(--good); }
+
+.hero-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 12px;
+}
+
+.hero-detail { font-size: 0.92rem; color: var(--text-2); font-weight: 300; }
+
+/* ============ CALLOUTS ============ */
+.callout {
+    padding: 24px 28px;
+    margin: 32px 0;
+    border-left: 3px solid var(--copper);
+    background: var(--surface);
+    font-family: 'Fraunces', serif;
+}
+
+.callout.bad { border-left-color: var(--bad); }
+.callout.good { border-left-color: var(--good); }
+.callout.warn { border-left-color: var(--warn); }
+
+.callout-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--copper);
+    margin-bottom: 12px;
+}
+.callout.bad .callout-title { color: var(--bad); }
+.callout.good .callout-title { color: var(--good); }
+.callout.warn .callout-title { color: var(--warn); }
+
+.callout p:last-child { margin-bottom: 0; }
+
+/* ============ EQUATIONS ============ */
+.eq-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin: 28px 0;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    line-height: 2.2;
+    overflow-x: auto;
+}
+
+.eq-block .eq-line {
+    display: block;
+    margin: 8px 0;
+}
+
+.eq-block .var { color: var(--copper); }
+.eq-block .const { color: var(--text-2); }
+.eq-block .arrow { color: var(--text-3); margin: 0 12px; }
+.eq-label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-top: 16px;
+}
+
+/* ============ TABLE ============ */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 32px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+}
+
+.data-table th {
+    text-align: left;
+    padding: 14px 16px;
+    background: var(--surface-2);
+    color: var(--copper);
+    font-weight: 500;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-strong);
+}
+
+.data-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+.data-table tr:hover td { background: var(--surface); }
+
+.data-table .bad-cell { color: var(--bad); font-weight: 500; }
+.data-table .good-cell { color: var(--good); font-weight: 500; }
+.data-table .warn-cell { color: var(--warn); }
+
+/* ============ CHARTS ============ */
+.chart-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin: 32px 0;
+}
+
+.chart-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.chart-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-3);
+    margin-bottom: 24px;
+    letter-spacing: 0.05em;
+}
+
+.chart-container {
+    height: 360px;
+    position: relative;
+}
+
+/* ============ INTERACTIVE ============ */
+.sim-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin: 32px 0;
+}
+
+.sim-controls {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.sim-slider-wrap {
+    flex: 1;
+    min-width: 240px;
+}
+
+.sim-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.sim-value {
+    color: var(--copper);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    outline: none;
+    border-radius: 2px;
+}
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--copper);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--copper);
+}
+input[type=range]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: var(--copper);
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid var(--bg);
+}
+
+.sim-readout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    padding: 24px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+}
+
+.readout-cell {
+    text-align: left;
+}
+
+.readout-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-bottom: 6px;
+}
+
+.readout-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.readout-value.bad { color: var(--bad); }
+.readout-value.good { color: var(--good); }
+.readout-value.warn { color: var(--warn); }
+
+.readout-unit { font-size: 0.7rem; color: var(--text-3); margin-left: 4px; font-weight: 400; }
+
+/* ============ SCHEMATIC ============ */
+.schematic {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin: 32px 0;
+    overflow-x: auto;
+}
+
+.schematic svg {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.schematic-caption {
+    text-align: center;
+    margin-top: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-3);
+    letter-spacing: 0.05em;
+}
+
+/* ============ TAKEAWAYS ============ */
+.takeaways {
+    counter-reset: take;
+}
+
+.takeaway {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 28px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: start;
+}
+.takeaway:last-child { border-bottom: none; }
+
+.takeaway::before {
+    counter-increment: take;
+    content: counter(take, decimal-leading-zero);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.4rem;
+    color: var(--copper);
+    font-weight: 500;
+    grid-row: span 2;
+}
+
+.takeaway-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.takeaway-body { color: var(--text-2); font-size: 0.95rem; }
+
+/* ============ FOOTER ============ */
+footer {
+    margin-top: 120px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 0.1em;
+}
+
+@media (max-width: 720px) {
+    .container { padding: 48px 20px 80px; }
+    .hero-statement { grid-template-columns: 1fr; }
+    .hero-cell.bad { border-right: none; border-bottom: 1px solid var(--bad); }
+    .hero-cell.good { border-left: none; border-top: 1px solid var(--good); }
+    .hero-arrow { padding: 16px; transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ============ HEADER ============ -->
+<div class="eyebrow">Engineering Analysis · NB-18 Test Fixture</div>
+<h1>当一只 <em>2 kΩ</em> 上拉电阻<br>压塌了整条 <em>UART</em> 总线</h1>
+<p class="subtitle">PC 串口 Wired-OR 总线在多工位并接场景下的失效机理与上拉电阻取值分析。问题表象简单——把 R87 从 2K 换成 20K 就解决了——但背后涉及的是 N 个工位上拉电流叠加、GPIO 内阻与肖特基 V<sub>f</sub> 串联累积、以及 UART 接收门限的余量管理。</p>
+
+<div class="meta-bar">
+    <div class="meta-item"><span class="meta-label">Subject</span><span class="meta-value">PC_RXD Bus / Diode-OR Topology</span></div>
+    <div class="meta-item"><span class="meta-label">Component</span><span class="meta-value">R87 · Pull-up to 3.3V</span></div>
+    <div class="meta-item"><span class="meta-label">MCU</span><span class="meta-value">FM33LG04X · Cortex-M0+</span></div>
+    <div class="meta-item"><span class="meta-label">Diode</span><span class="meta-value">D21 · SK36 (Schottky)</span></div>
+</div>
+
+<!-- ============ HERO ============ -->
+<div class="hero-statement">
+    <div class="hero-cell bad">
+        <div class="hero-label">Before</div>
+        <div class="hero-value">2 kΩ</div>
+        <div class="hero-detail">多工位并接通讯异常<br>线上低电平压不下来</div>
+    </div>
+    <div class="hero-arrow">→</div>
+    <div class="hero-cell good">
+        <div class="hero-label">After</div>
+        <div class="hero-value">20 kΩ</div>
+        <div class="hero-detail">所有工位通讯恢复正常<br>低电平裕量充足</div>
+    </div>
+</div>
+
+<!-- ============ SECTION 1: TOPOLOGY ============ -->
+<section>
+<h2><span class="num">§ 01</span>电路拓扑：Wired-OR 总线</h2>
+
+<p class="lead">这条 PC 串口下行通道（MCU_TX → PC_RXD）不是直接驱动，而是通过<strong>肖特基二极管 + 上拉电阻</strong>构成的"开漏模拟"——这是 wired-OR 总线最经典的实现方式之一。</p>
+
+<div class="schematic">
+<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg">
+<defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L9,3 z" fill="#d4a574"/>
+    </marker>
+</defs>
+<style>
+    .wire { stroke: #f0ebe0; stroke-width: 1.5; fill: none; }
+    .label-mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: #f0ebe0; }
+    .label-name { font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: #d4a574; letter-spacing: 0.05em; }
+    .label-val { font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: #9a958a; }
+    .node { fill: #d4a574; }
+    .vdd { stroke: #e85d75; stroke-width: 2; fill: none; }
+    .gnd-line { stroke: #6db89c; stroke-width: 2; fill: none; }
+</style>
+
+<!-- 3.3V rail -->
+<line x1="280" y1="40" x2="280" y2="60" class="vdd"/>
+<line x1="270" y1="40" x2="290" y2="40" class="vdd"/>
+<text x="295" y="46" class="label-name">3.3V</text>
+
+<!-- R87 -->
+<rect x="270" y="60" width="20" height="44" fill="none" stroke="#f0ebe0" stroke-width="1.5"/>
+<text x="298" y="86" class="label-name">R87</text>
+<text x="298" y="100" class="label-val">2K → 20K</text>
+
+<!-- vertical wire from R to bus node -->
+<line x1="280" y1="104" x2="280" y2="180" class="wire"/>
+
+<!-- MCU TX label -->
+<text x="40" y="166" class="label-name">MCU_PC_TXD</text>
+<line x1="120" y1="180" x2="200" y2="180" class="wire"/>
+
+<!-- Diode D21 -->
+<polygon points="200,170 200,190 220,180" fill="none" stroke="#f0ebe0" stroke-width="1.5"/>
+<line x1="220" y1="170" x2="220" y2="190" stroke="#f0ebe0" stroke-width="2"/>
+<text x="195" y="160" class="label-name">D21</text>
+<text x="195" y="208" class="label-val">SK36</text>
+
+<line x1="220" y1="180" x2="280" y2="180" class="wire"/>
+
+<!-- Bus node -->
+<circle cx="280" cy="180" r="3" class="node"/>
+
+<!-- Bus extends right to connector -->
+<line x1="280" y1="180" x2="500" y2="180" class="wire"/>
+<text x="380" y="170" class="label-name">PC_RXD (BUS)</text>
+
+<!-- 51 ohm series -->
+<rect x="500" y="170" width="40" height="20" fill="none" stroke="#f0ebe0" stroke-width="1.5"/>
+<text x="510" y="206" class="label-val">R80 51Ω</text>
+
+<line x1="540" y1="180" x2="610" y2="180" class="wire"/>
+
+<!-- Connector -->
+<rect x="610" y="160" width="40" height="40" fill="none" stroke="#d4a574" stroke-width="1.5"/>
+<text x="615" y="184" class="label-mono">P1·2</text>
+<text x="612" y="222" class="label-name">→ PC</text>
+
+<!-- Down arrow indicating signal direction -->
+<path d="M 80 195 L 80 215 L 540 215" stroke="#5e5b54" stroke-width="0.5" stroke-dasharray="3 3" fill="none" marker-end="url(#arrow)"/>
+<text x="280" y="240" class="label-val" text-anchor="middle">单工位等效电路 · MCU 通过 D21 拉低，R87 上拉</text>
+
+</svg>
+<div class="schematic-caption">FIG. 1 — 单工位 PC_RXD 通道电路结构（仅画一只工位）</div>
+</div>
+
+<h3>拉低与拉高的不对称性</h3>
+<p>这种拓扑的关键在于<strong>不对称驱动</strong>：MCU 不是直接驱动总线，而是通过 D21 这只肖特基二极管。所以信号在两个方向上的行为完全不同：</p>
+
+<div class="eq-block">
+<span class="eq-line"><span class="const">MCU_TX = LOW</span><span class="arrow">→</span><span class="var">D21 forward</span><span class="arrow">→</span>BUS pulled to <span class="var">V<sub>OL</sub> + V<sub>f</sub> ≈ 0.3 ~ 0.7V</span></span>
+<span class="eq-line"><span class="const">MCU_TX = HIGH</span><span class="arrow">→</span><span class="var">D21 reverse</span><span class="arrow">→</span>BUS pulled to <span class="var">V<sub>DD</sub></span> by <span class="var">R87</span></span>
+<span class="eq-label">— Diode-OR 行为方程 —</span>
+</div>
+
+<p>选这种拓扑的理由很直接：<strong>多个工位的 MCU_TX 可以"线或"在一起，谁也不会冲突</strong>。当一个 MCU 想说话，它把自己的 TX 拉低，二极管导通，把整条总线压低；其他不说话的 MCU 把 TX 保持高，自己的二极管反偏，相当于从总线上消失。</p>
+</section>
+
+<!-- ============ SECTION 2: MULTI-STATION MODEL ============ -->
+<section>
+<h2><span class="num">§ 02</span>多工位并接的电气模型</h2>
+
+<p class="lead">把 N 只工位通过 P1/P2 排针并接到 PC，从总线节点看下去，等效电路就是 N 只 R87 全部对各自的 3.3V 并联。</p>
+
+<div class="schematic">
+<svg viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg">
+<style>
+    .wire2 { stroke: #f0ebe0; stroke-width: 1.5; fill: none; }
+    .vdd2 { stroke: #e85d75; stroke-width: 2; fill: none; }
+    .label-mono2 { font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: #f0ebe0; }
+    .label-name2 { font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: #d4a574; }
+    .label-val2 { font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: #9a958a; }
+    .label-bad { font-family: 'JetBrains Mono', monospace; font-size: 11px; fill: #e85d75; font-weight: 500; }
+    .station-box { fill: none; stroke: #313a4f; stroke-width: 1; stroke-dasharray: 3 3; }
+</style>
+
+<!-- BUS line at bottom -->
+<line x1="80" y1="320" x2="640" y2="320" class="wire2" stroke-width="2"/>
+<text x="320" y="350" class="label-name2">BUS · PC_RXD</text>
+
+<!-- Station 1 -->
+<rect x="80" y="40" width="100" height="240" class="station-box"/>
+<text x="130" y="30" class="label-mono2" text-anchor="middle">STN-1</text>
+<line x1="130" y1="50" x2="130" y2="70" class="vdd2"/>
+<line x1="120" y1="50" x2="140" y2="50" class="vdd2"/>
+<text x="155" y="56" class="label-val2">3.3V</text>
+<rect x="120" y="70" width="20" height="40" fill="none" stroke="#f0ebe0" stroke-width="1.5"/>
+<text x="155" y="95" class="label-val2">2K</text>
+<line x1="130" y1="110" x2="130" y2="320" class="wire2"/>
+<polygon points="120,250 120,270 140,260" fill="none" stroke="#f0ebe0" stroke-width="1.5"/>
+<line x1="140" y1="250" x2="140" y2="270" stroke="#f0ebe0" stroke-width="2"/>
+<text x="105" y="200" class="label-val2">D</text>
+<line x1="100" y1="260" x2="120" y2="260" class="wire2"/>
+<text x="92" y="265" class="label-val2" text-anchor="end">TX</text>
+
+<!-- Station 2 -->
+<rect x="200" y="40" width="100" height="240" class="station-box"/>
+<text x="250" y="30" class="label-mono2" text-anchor="middle">STN-2</text>
+<line x1="250" y1="50" x2="250" y2="70" class="vdd2"/>
+<line x1="240" y1="50" x2="260" y2="50" class="vdd2"/>
+<text x="275" y="56" class="label-val2">3.3V</text>
+<rect x="240" y="70" width="20" height="40" fill="none" stroke="#f0ebe0" stroke-width="1.5"/>
+<text x="275" y="95" class="label-val2">2K</text>
+<line x1="250" y1="110" x2="250" y2="320" class="wire2"/>
+<polygon points="240,250 240,270 260,260" fill="none" stroke="#f0ebe0" stroke-width="1.5"/>
+<line x1="260" y1="250" x2="260" y2="270" stroke="#f0ebe0" stroke-width="2"/>
+<line x1="220" y1="260" x2="240" y2="260" class="wire2"/>
+<text x="212" y="265" class="label-val2" text-anchor="end">TX</text>
+
+<!-- Station 3 -->
+<rect x="320" y="40" width="100" height="240" class="station-box"/>
+<text x="370" y="30" class="label-mono2" text-anchor="middle">STN-3</text>
+<line x1="370" y1="50" x2="370" y2="70" class="vdd2"/>
+<line x1="360" y1="50" x2="380" y2="50" class="vdd2"/>
+<text x="395" y="56" class="label-val2">3.3V</text>
+<rect x="360" y="70" width="20" height="40" fill="none" stroke="#f0ebe0" stroke-width="1.5"/>
+<text x="395" y="95" class="label-val2">2K</text>
+<line x1="370" y1="110" x2="370" y2="320" class="wire2"/>
+<polygon points="360,250 360,270 380,260" fill="none" stroke="#f0ebe0" stroke-width="1.5"/>
+<line x1="380" y1="250" x2="380" y2="270" stroke="#f0ebe0" stroke-width="2"/>
+<line x1="340" y1="260" x2="360" y2="260" class="wire2"/>
+<text x="332" y="265" class="label-val2" text-anchor="end">TX</text>
+
+<!-- Ellipsis -->
+<text x="455" y="180" class="label-mono2" text-anchor="middle">···</text>
+
+<!-- Station N -->
+<rect x="490" y="40" width="100" height="240" class="station-box"/>
+<text x="540" y="30" class="label-mono2" text-anchor="middle">STN-N</text>
+<line x1="540" y1="50" x2="540" y2="70" class="vdd2"/>
+<line x1="530" y1="50" x2="550" y2="50" class="vdd2"/>
+<text x="565" y="56" class="label-val2">3.3V</text>
+<rect x="530" y="70" width="20" height="40" fill="none" stroke="#f0ebe0" stroke-width="1.5"/>
+<text x="565" y="95" class="label-val2">2K</text>
+<line x1="540" y1="110" x2="540" y2="320" class="wire2"/>
+<polygon points="530,250 530,270 550,260" fill="none" stroke="#f0ebe0" stroke-width="1.5"/>
+<line x1="550" y1="250" x2="550" y2="270" stroke="#f0ebe0" stroke-width="2"/>
+<line x1="510" y1="260" x2="530" y2="260" class="wire2"/>
+<text x="502" y="265" class="label-val2" text-anchor="end">TX</text>
+
+<!-- Bus nodes -->
+<circle cx="130" cy="320" r="3" fill="#d4a574"/>
+<circle cx="250" cy="320" r="3" fill="#d4a574"/>
+<circle cx="370" cy="320" r="3" fill="#d4a574"/>
+<circle cx="540" cy="320" r="3" fill="#d4a574"/>
+
+<!-- PC -->
+<rect x="600" y="305" width="40" height="30" fill="none" stroke="#d4a574" stroke-width="1.5"/>
+<text x="620" y="325" class="label-mono2" text-anchor="middle">PC</text>
+
+<text x="360" y="370" class="label-bad" text-anchor="middle">N 只 2K 上拉并联 → 等效 R<sub>eq</sub> = 2K / N</text>
+</svg>
+<div class="schematic-caption">FIG. 2 — N 工位并接：所有 R87 在 BUS 节点处自动并联</div>
+</div>
+
+<h3>线上低电平的稳态求解</h3>
+<p>当某一只工位主动拉低总线时，它的 GPIO 必须把<strong>所有 N 只上拉电阻的电流都灌到地</strong>。这里需要把 GPIO 的导通内阻、二极管的正向压降一起列入方程：</p>
+
+<div class="eq-block">
+<span class="eq-line"><span class="var">V<sub>BUS</sub></span> = <span class="var">I<sub>sink</sub></span> · <span class="const">R<sub>DSon</sub></span> + <span class="const">V<sub>f</sub></span></span>
+<span class="eq-line"><span class="var">I<sub>sink</sub></span> = <span class="const">N</span> · ( <span class="const">V<sub>DD</sub></span> − <span class="var">V<sub>BUS</sub></span> ) / <span class="const">R</span></span>
+<span class="eq-line">⟹ <span class="var">V<sub>BUS</sub></span> = ( <span class="const">N · R<sub>DSon</sub> · V<sub>DD</sub></span> + <span class="const">V<sub>f</sub> · R</span> ) / ( <span class="const">R + N · R<sub>DSon</sub></span> )</span>
+<span class="eq-label">— 总线低电平稳态方程 —</span>
+</div>
+
+<p>这个方程把整件事串起来了：<code>R</code> 越小，分母里的 <code>R + N·R<sub>DSon</sub></code> 中前者越小，<code>V<sub>BUS</sub></code> 受 N 的影响越剧烈；<code>R</code> 越大，<code>V<sub>BUS</sub></code> 越接近 <code>V<sub>f</sub></code>，几乎与 N 无关。</p>
+
+<p style="font-size: 0.92rem; color: var(--text-2);">取 FM33LG04X 标称值 <code>R<sub>DSon</sub> ≈ 50Ω</code>（中等驱动档位），<code>V<sub>f</sub> ≈ 0.3V</code>（SK36 在毫安级）作为后续模型参数。</p>
+</section>
+
+<!-- ============ SECTION 3: WHY 2K FAILED ============ -->
+<section>
+<h2><span class="num">§ 03</span>为什么 2K 会失败</h2>
+
+<p class="lead">把 R = 2000 代入上面那个方程，扫描 N = 1 ~ 16，看 V<sub>BUS</sub>(LOW) 的走势——这就是异常的根源。</p>
+
+<div class="chart-wrap">
+    <div class="chart-title">总线低电平 V<sub>BUS</sub>(LOW) 随工位数变化</div>
+    <div class="chart-subtitle">2KΩ vs 20KΩ · UART 接收门限 V<sub>IL,max</sub> ≈ 0.8V</div>
+    <div class="chart-container">
+        <canvas id="vbusChart"></canvas>
+    </div>
+</div>
+
+<div class="callout bad">
+<div class="callout-title">⚠ 失效区域</div>
+<p>用 2K 上拉时，工位数到 <strong>8</strong> 左右，线上低电平就攀升到 <strong>0.8V 量级</strong>，刚好踩在标准 TTL UART 接收器的 V<sub>IL,max</sub> 上。再叠加线缆电容引起的下降沿钝化、地弹噪声、PC 端 USB-UART 转换器的施密特门限漂移，<strong>START bit 直接被判成高电平</strong>——表现就是 PC 端收不到数据，或者偶发字节错位。</p>
+</div>
+
+<h3>电流的另一面：GPIO 的负担</h3>
+<p>除了线上电平跑偏，2K × 8 工位还意味着<strong>主动拉低的 MCU 要灌进近 10 mA 的电流</strong>。下面是同一组工况下 GPIO 灌电流的对比：</p>
+
+<div class="chart-wrap">
+    <div class="chart-title">主动 GPIO 灌电流 I<sub>sink</sub></div>
+    <div class="chart-subtitle">越大意味着 V<sub>OL</sub> 抬得越高，是上图升压的根源</div>
+    <div class="chart-container">
+        <canvas id="isinkChart"></canvas>
+    </div>
+</div>
+
+<p>FM33LG04X 这一类小 Cortex-M0+ 的 GPIO 在 8 mA 灌电流下 V<sub>OL</sub> 就会爬到 0.4V 左右；超过 10 mA 之后就进入非线性区，V<sub>OL</sub> 几乎"翘起来"。这是 2K 方案在多工位下不可避免的恶性循环：<strong>电流越大→V<sub>OL</sub> 越高→线压越高→更接近门限</strong>。</p>
+</section>
+
+<!-- ============ SECTION 4: WHY 20K WORKS ============ -->
+<section>
+<h2><span class="num">§ 04</span>为什么 20K 一换就好</h2>
+
+<p class="lead">把 R 提高 10 倍，所有派生出来的电流量也按 10 倍缩小——这是个标度变换，但对系统裕量的影响是非线性的。</p>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>工位数 N</th>
+            <th>2K · I<sub>sink</sub></th>
+            <th>2K · V<sub>BUS</sub>(LOW)</th>
+            <th>20K · I<sub>sink</sub></th>
+            <th>20K · V<sub>BUS</sub>(LOW)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>1</td><td>1.5 mA</td><td class="good-cell">0.37 V</td><td>0.15 mA</td><td class="good-cell">0.31 V</td></tr>
+        <tr><td>4</td><td>5.4 mA</td><td class="warn-cell">0.57 V</td><td>0.59 mA</td><td class="good-cell">0.33 V</td></tr>
+        <tr><td>8</td><td>10.0 mA</td><td class="bad-cell">0.80 V</td><td>1.18 mA</td><td class="good-cell">0.36 V</td></tr>
+        <tr><td>12</td><td>14.0 mA</td><td class="bad-cell">1.00 V</td><td>1.76 mA</td><td class="good-cell">0.39 V</td></tr>
+        <tr><td>16</td><td>17.6 mA</td><td class="bad-cell">1.16 V</td><td>2.34 mA</td><td class="good-cell">0.42 V</td></tr>
+    </tbody>
+</table>
+
+<div class="callout good">
+<div class="callout-title">✓ 量化裕量</div>
+<p>20K 方案下，即使 16 工位并接，V<sub>BUS</sub>(LOW) 只有 <strong>0.42V</strong>——离 UART 0.8V 门限还有<strong>近 400 mV 的裕量</strong>。GPIO 灌电流压在 2.4 mA 以下，V<sub>OL</sub> 基本就是 IO 在零电流附近的本底值。整个低电平表现近似与 N 无关，这才是合理的设计点。</p>
+</div>
+
+<h3>实时仿真：调一调你自己看</h3>
+<p>下面这个面板可以拖动滑块改 N 和 R，实时算 V<sub>BUS</sub>、I<sub>sink</sub>、上升时间。可以直观感受为什么这条曲线是非线性的：</p>
+
+<div class="sim-panel">
+    <div class="sim-controls">
+        <div class="sim-slider-wrap">
+            <div class="sim-label"><span>工位数 N</span><span class="sim-value" id="nVal">8</span></div>
+            <input type="range" id="nSlider" min="1" max="20" value="8" step="1">
+        </div>
+        <div class="sim-slider-wrap">
+            <div class="sim-label"><span>上拉电阻 R</span><span class="sim-value" id="rVal">10 kΩ</span></div>
+            <input type="range" id="rSlider" min="1" max="50" value="10" step="1">
+        </div>
+    </div>
+    <div class="sim-readout">
+        <div class="readout-cell">
+            <div class="readout-label">线上 V<sub>BUS</sub>(LOW)</div>
+            <div class="readout-value" id="vbusOut">— <span class="readout-unit">V</span></div>
+        </div>
+        <div class="readout-cell">
+            <div class="readout-label">GPIO 灌电流</div>
+            <div class="readout-value" id="isinkOut">— <span class="readout-unit">mA</span></div>
+        </div>
+        <div class="readout-cell">
+            <div class="readout-label">门限裕量</div>
+            <div class="readout-value" id="marginOut">— <span class="readout-unit">mV</span></div>
+        </div>
+        <div class="readout-cell">
+            <div class="readout-label">RC 上升时间 (10→90%)</div>
+            <div class="readout-value" id="riseOut">— <span class="readout-unit">μs</span></div>
+        </div>
+    </div>
+</div>
+</section>
+
+<!-- ============ SECTION 5: TRADE-OFF ============ -->
+<section>
+<h2><span class="num">§ 05</span>权衡：上升沿与负载</h2>
+
+<p class="lead">"那为什么不直接用 100K 上拉？"——因为另一头还有 RC 上升时间这条约束。把 R 拉太大，总线高电平上不去（或者上得太慢），波特率就会撞墙。</p>
+
+<div class="eq-block">
+<span class="eq-line"><span class="var">τ</span> = <span class="const">R<sub>eq</sub></span> · <span class="const">C<sub>BUS</sub></span> = ( <span class="const">R / N</span> ) · <span class="const">C<sub>BUS</sub></span></span>
+<span class="eq-line">10–90% rise time ≈ <span class="var">2.2 · τ</span></span>
+<span class="eq-label">— 高电平上升时间近似 —</span>
+</div>
+
+<p>典型多工位排针 + 短线缆下，<code>C<sub>BUS</sub> ≈ 50 pF/板 × N + 100 pF（PC 与连接器）</code>。20K + 8 工位：<code>R<sub>eq</sub> = 2.5 kΩ</code>，<code>C ≈ 500 pF</code>，<code>τ ≈ 1.25 μs</code>，对应 10-90% 上升时间 <strong>≈ 2.75 μs</strong>。</p>
+
+<div class="chart-wrap">
+    <div class="chart-title">10-90% 上升时间 vs 上拉电阻（N = 8 工位）</div>
+    <div class="chart-subtitle">不同波特率下的 bit 时间限制（红色虚线）</div>
+    <div class="chart-container">
+        <canvas id="riseChart"></canvas>
+    </div>
+</div>
+
+<div class="callout warn">
+<div class="callout-title">! 设计窗口</div>
+<p>对你这条 NB-18 测试夹具上的 PC 串口（一般跑 9600 ~ 115200），20K 完全在安全区——bit 时间还有 8.7 μs（115200），上升时间占用只有 30%。如果未来要把波特率推到 1 Mbps 以上，那才需要重新评估。</p>
+</div>
+
+<p>这是一个二维空间里找平衡点的问题：</p>
+
+<table class="data-table">
+    <thead>
+        <tr><th>R 取值</th><th>低电平裕量</th><th>上升沿（多工位）</th><th>静态功耗（每站）</th><th>评价</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>2K</td><td class="bad-cell">不足（多工位塌）</td><td class="good-cell">很快</td><td class="warn-cell">1.65 mA</td><td class="bad-cell">不可用</td></tr>
+        <tr><td>4.7K</td><td class="warn-cell">勉强（≤6 工位）</td><td class="good-cell">快</td><td class="good-cell">0.7 mA</td><td class="warn-cell">边界</td></tr>
+        <tr><td>10K</td><td class="good-cell">充足</td><td class="good-cell">合适</td><td class="good-cell">0.33 mA</td><td class="good-cell">推荐</td></tr>
+        <tr><td>20K</td><td class="good-cell">非常充足</td><td class="warn-cell">中速 OK，高速边界</td><td class="good-cell">0.17 mA</td><td class="good-cell">已验证</td></tr>
+        <tr><td>100K</td><td class="good-cell">极充足</td><td class="bad-cell">慢，限制波特率</td><td class="good-cell">0.03 mA</td><td class="warn-cell">过保守</td></tr>
+    </tbody>
+</table>
+</section>
+
+<!-- ============ SECTION 6: TAKEAWAYS ============ -->
+<section>
+<h2><span class="num">§ 06</span>工程启示</h2>
+
+<div class="takeaways">
+    <div class="takeaway">
+        <div>
+            <div class="takeaway-title">单工位能跑，不代表多工位能跑</div>
+            <div class="takeaway-body">2K 上拉在单板调试时完全没问题，I<sub>sink</sub> 1.5 mA、V<sub>OL</sub> 0.4V 都很正常。问题只在并接拓扑下才浮现。<strong>设计阶段必须把"最大并接数"当作硬约束</strong>，把上拉电阻按最坏情况选型。</div>
+        </div>
+    </div>
+    <div class="takeaway">
+        <div>
+            <div class="takeaway-title">Diode-OR 总线本质是"共享变量"</div>
+            <div class="takeaway-body">每多一只工位，就在总线上增加一份电流负担；这跟在共享数据结构上加引用一样，<strong>聚合效应是线性叠加的</strong>。设计时就该按共享资源建模，单点上拉值反映的是聚合负载。</div>
+        </div>
+    </div>
+    <div class="takeaway">
+        <div>
+            <div class="takeaway-title">门限不是个点，是个区间</div>
+            <div class="takeaway-body">UART 接收器的 V<sub>IL</sub>/V<sub>IH</sub> 留有迟滞，但 0.8V 量级的低电平已经是"灰色地带"——是否被识别成 0 取决于温度、施密特门限漂移、信号沿陡峭程度。<strong>一个稳健的设计应该把信号压到 V<sub>IL</sub>/2 以下</strong>，留够一倍裕量。</div>
+        </div>
+    </div>
+    <div class="takeaway">
+        <div>
+            <div class="takeaway-title">替代方案：单点共享上拉</div>
+            <div class="takeaway-body">如果未来需要支持更多工位、或者希望每个工位 BOM 完全相同，可以让所有工位 R87 改 DNP，只在主站（或 PC 那侧的转接板）保留一只 4.7K 主上拉。这样无论 N 多大，<strong>总线只看到一只上拉，不会有聚合效应</strong>。</div>
+        </div>
+    </div>
+    <div class="takeaway">
+        <div>
+            <div class="takeaway-title">示波器是终审法官</div>
+            <div class="takeaway-body">下次再遇到这类总线异常，第一件事是用示波器抓 BUS 在低电平时的实际电压。<strong>如果 V<sub>BUS</sub>(LOW) > 0.6V，几乎可以肯定是上拉相关问题</strong>；如果是清晰的 0.2V 但仍然丢包，再去查时序、地弹、共模等其他方向。</div>
+        </div>
+    </div>
+</div>
+</section>
+
+<footer>
+    R87 · 2K → 20K · NB-18 PC_RXD BUS · ANALYSIS COMPLETE
+</footer>
+
+</div>
+
+<script>
+// ============ CONSTANTS ============
+const VDD = 3.3;
+const RDS = 50;       // GPIO Ron (Ω)
+const VF = 0.3;       // Schottky Vf (V)
+const VTHRESHOLD = 0.8; // UART V_IL_max
+const C_PER_BOARD = 50e-12; // 50 pF/board
+const C_BASE = 100e-12;     // base capacitance
+
+// V_BUS(LOW) closed-form solution
+function vbusLow(N, R) {
+    return (N * RDS * VDD + VF * R) / (R + N * RDS);
+}
+// I_sink at MCU GPIO when driving low
+function isink(N, R) {
+    const v = vbusLow(N, R);
+    return N * (VDD - v) / R; // amperes
+}
+// 10-90% rise time
+function riseTime(N, R) {
+    const Req = R / N;
+    const C = C_BASE + C_PER_BOARD * N;
+    return 2.2 * Req * C; // seconds
+}
+
+// ============ CHART STYLE ============
+const cssGrid = 'rgba(240, 235, 224, 0.06)';
+const cssText = '#9a958a';
+const cssBad = '#e85d75';
+const cssGood = '#6db89c';
+const cssCopper = '#d4a574';
+const cssWarn = '#e8a85d';
+
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = cssText;
+Chart.defaults.borderColor = cssGrid;
+
+// ============ CHART 1: V_BUS(LOW) ============
+const Nvals = Array.from({length: 16}, (_, i) => i + 1);
+const v2K = Nvals.map(n => vbusLow(n, 2000));
+const v20K = Nvals.map(n => vbusLow(n, 20000));
+
+new Chart(document.getElementById('vbusChart'), {
+    type: 'line',
+    data: {
+        labels: Nvals,
+        datasets: [
+            {
+                label: 'R87 = 2 kΩ',
+                data: v2K,
+                borderColor: cssBad,
+                backgroundColor: 'rgba(232,93,117,0.1)',
+                borderWidth: 2,
+                tension: 0.25,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: cssBad,
+                fill: true
+            },
+            {
+                label: 'R87 = 20 kΩ',
+                data: v20K,
+                borderColor: cssGood,
+                backgroundColor: 'rgba(109,184,156,0.1)',
+                borderWidth: 2,
+                tension: 0.25,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: cssGood,
+                fill: true
+            },
+            {
+                label: 'V_IL,max = 0.8V (UART threshold)',
+                data: Nvals.map(_ => VTHRESHOLD),
+                borderColor: cssCopper,
+                borderWidth: 1.5,
+                borderDash: [6, 4],
+                pointRadius: 0,
+                fill: false
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'top', labels: { padding: 16, usePointStyle: true, pointStyle: 'rect' } },
+            tooltip: {
+                backgroundColor: '#141923',
+                borderColor: '#313a4f',
+                borderWidth: 1,
+                titleColor: cssCopper,
+                callbacks: {
+                    label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)} V`
+                }
+            }
+        },
+        scales: {
+            x: {
+                title: { display: true, text: '工位数 N', color: cssText },
+                grid: { color: cssGrid }
+            },
+            y: {
+                title: { display: true, text: 'V_BUS (LOW)  [V]', color: cssText },
+                grid: { color: cssGrid },
+                min: 0,
+                max: 1.4
+            }
+        }
+    }
+});
+
+// ============ CHART 2: I_SINK ============
+const i2K = Nvals.map(n => isink(n, 2000) * 1000); // mA
+const i20K = Nvals.map(n => isink(n, 20000) * 1000);
+
+new Chart(document.getElementById('isinkChart'), {
+    type: 'bar',
+    data: {
+        labels: Nvals,
+        datasets: [
+            {
+                label: 'R87 = 2 kΩ',
+                data: i2K,
+                backgroundColor: 'rgba(232,93,117,0.6)',
+                borderColor: cssBad,
+                borderWidth: 1
+            },
+            {
+                label: 'R87 = 20 kΩ',
+                data: i20K,
+                backgroundColor: 'rgba(109,184,156,0.6)',
+                borderColor: cssGood,
+                borderWidth: 1
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'top', labels: { padding: 16, usePointStyle: true, pointStyle: 'rect' } },
+            tooltip: {
+                backgroundColor: '#141923',
+                borderColor: '#313a4f',
+                borderWidth: 1,
+                titleColor: cssCopper,
+                callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} mA` }
+            }
+        },
+        scales: {
+            x: { title: { display: true, text: '工位数 N', color: cssText }, grid: { color: cssGrid } },
+            y: { title: { display: true, text: 'I_sink  [mA]', color: cssText }, grid: { color: cssGrid }, beginAtZero: true }
+        }
+    }
+});
+
+// ============ CHART 3: RISE TIME vs R ============
+const Rsweep = [];
+for (let r = 1; r <= 100; r += 2) Rsweep.push(r * 1000);
+const N_FIXED = 8;
+const riseData = Rsweep.map(r => riseTime(N_FIXED, r) * 1e6); // μs
+
+new Chart(document.getElementById('riseChart'), {
+    type: 'line',
+    data: {
+        labels: Rsweep.map(r => r/1000),
+        datasets: [
+            {
+                label: 'tr (10-90%)  · N = 8',
+                data: riseData,
+                borderColor: cssCopper,
+                backgroundColor: 'rgba(212,165,116,0.1)',
+                borderWidth: 2,
+                tension: 0.2,
+                pointRadius: 0,
+                fill: true
+            },
+            {
+                label: 'bit time @ 115200',
+                data: Rsweep.map(_ => 1e6 / 115200),
+                borderColor: cssBad,
+                borderWidth: 1.5,
+                borderDash: [6, 4],
+                pointRadius: 0
+            },
+            {
+                label: 'bit time @ 9600',
+                data: Rsweep.map(_ => 1e6 / 9600),
+                borderColor: cssGood,
+                borderWidth: 1.5,
+                borderDash: [6, 4],
+                pointRadius: 0
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'top', labels: { padding: 16, usePointStyle: true, pointStyle: 'rect' } },
+            tooltip: {
+                backgroundColor: '#141923',
+                borderColor: '#313a4f',
+                borderWidth: 1,
+                titleColor: cssCopper,
+                callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} μs` }
+            }
+        },
+        scales: {
+            x: { title: { display: true, text: 'R87  [kΩ]', color: cssText }, grid: { color: cssGrid } },
+            y: {
+                title: { display: true, text: 'rise time  [μs]', color: cssText },
+                grid: { color: cssGrid },
+                type: 'logarithmic',
+                min: 0.1,
+                max: 200
+            }
+        }
+    }
+});
+
+// ============ INTERACTIVE SIM ============
+const nSlider = document.getElementById('nSlider');
+const rSlider = document.getElementById('rSlider');
+const nVal = document.getElementById('nVal');
+const rVal = document.getElementById('rVal');
+const vbusOut = document.getElementById('vbusOut');
+const isinkOut = document.getElementById('isinkOut');
+const marginOut = document.getElementById('marginOut');
+const riseOut = document.getElementById('riseOut');
+
+function updateSim() {
+    const N = parseInt(nSlider.value);
+    const R = parseInt(rSlider.value) * 1000;
+    nVal.textContent = N;
+    rVal.textContent = (R/1000) + ' kΩ';
+
+    const v = vbusLow(N, R);
+    const i = isink(N, R) * 1000;
+    const margin = (VTHRESHOLD - v) * 1000;
+    const tr = riseTime(N, R) * 1e6;
+
+    vbusOut.innerHTML = `${v.toFixed(3)} <span class="readout-unit">V</span>`;
+    vbusOut.className = 'readout-value ' + (v < 0.5 ? 'good' : v < 0.8 ? 'warn' : 'bad');
+
+    isinkOut.innerHTML = `${i.toFixed(2)} <span class="readout-unit">mA</span>`;
+    isinkOut.className = 'readout-value ' + (i < 5 ? 'good' : i < 12 ? 'warn' : 'bad');
+
+    marginOut.innerHTML = `${margin.toFixed(0)} <span class="readout-unit">mV</span>`;
+    marginOut.className = 'readout-value ' + (margin > 300 ? 'good' : margin > 100 ? 'warn' : 'bad');
+
+    riseOut.innerHTML = `${tr.toFixed(2)} <span class="readout-unit">μs</span>`;
+    riseOut.className = 'readout-value ' + (tr < 1 ? 'good' : tr < 4 ? 'warn' : 'bad');
+}
+
+nSlider.addEventListener('input', updateSim);
+rSlider.addEventListener('input', updateSim);
+updateSim();
+</script>
+
+</body>
+</html>

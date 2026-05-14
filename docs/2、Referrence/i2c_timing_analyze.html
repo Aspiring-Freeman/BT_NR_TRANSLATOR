@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>I2C 时序完全图解</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1c2333;
+    --border: #30363d;
+    --scl-color: #58a6ff;
+    --sda-color: #3fb950;
+    --ann-color: #f78166;
+    --time-color: #d2a8ff;
+    --label-color: #e6edf3;
+    --muted: #8b949e;
+    --accent: #ffa657;
+    --danger: #f85149;
+    --success: #3fb950;
+    --ack-color: #d2a8ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--label-color);
+    font-family: 'Noto Sans SC', sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #0d1117 0%, #1c2333 50%, #0d1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 40px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(88,166,255,0.08) 0%, transparent 70%);
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #fff;
+  }
+  .header h1 span { color: var(--scl-color); }
+  .header p { color: var(--muted); margin-top: 6px; font-size: 14px; }
+
+  .nav {
+    display: flex;
+    gap: 8px;
+    padding: 16px 40px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .nav-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'Noto Sans SC', sans-serif;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { border-color: var(--scl-color); color: var(--scl-color); }
+  .nav-btn.active { background: var(--scl-color); border-color: var(--scl-color); color: #000; font-weight: 600; }
+
+  .main { padding: 32px 40px; max-width: 1400px; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(88,166,255,0.15);
+    color: var(--scl-color);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+  .section-desc { color: var(--muted); font-size: 14px; margin-bottom: 24px; line-height: 1.7; }
+
+  /* SVG Timing Diagram Container */
+  .diagram-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+  .diagram-box h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  svg text { font-family: 'JetBrains Mono', monospace; }
+
+  /* Param Table */
+  .param-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .param-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    border-left: 3px solid var(--border);
+    transition: border-color 0.2s;
+  }
+  .param-card:hover { border-left-color: var(--scl-color); }
+  .param-card.timing { border-left-color: var(--time-color); }
+  .param-card.rise { border-left-color: var(--ann-color); }
+  .param-card.setup { border-left-color: var(--success); }
+  .param-card.hold { border-left-color: var(--accent); }
+
+  .param-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .param-full { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .param-vals {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .param-val {
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .param-val.sm { background: rgba(88,166,255,0.12); color: var(--scl-color); }
+  .param-val.fm { background: rgba(63,185,80,0.12); color: var(--success); }
+  .param-val.fmplus { background: rgba(210,168,255,0.12); color: var(--time-color); }
+  .param-desc { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+  /* Explanation cards */
+  .explain-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 800px) { .explain-grid { grid-template-columns: 1fr; } }
+  .explain-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .explain-card h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .explain-card p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .explain-card code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    background: var(--bg3);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .dot-scl { background: var(--scl-color); }
+  .dot-sda { background: var(--sda-color); }
+  .dot-time { background: var(--time-color); }
+  .dot-ann { background: var(--ann-color); }
+  .dot-acc { background: var(--accent); }
+
+  /* Full param reference table */
+  .ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .ref-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--bg3);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .ref-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .ref-table .mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+  .tag-sm { background: rgba(88,166,255,0.15); color: var(--scl-color); }
+  .tag-fm { background: rgba(63,185,80,0.15); color: var(--success); }
+  .tag-fmp { background: rgba(210,168,255,0.15); color: var(--time-color); }
+
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-line { width: 24px; height: 2px; border-radius: 1px; }
+
+  .info-box {
+    background: rgba(88,166,255,0.07);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #cdd9e5;
+    line-height: 1.7;
+  }
+  .info-box strong { color: var(--scl-color); }
+
+  .warn-box {
+    background: rgba(247,129,102,0.07);
+    border: 1px solid rgba(247,129,102,0.2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #cdd9e5;
+    line-height: 1.7;
+  }
+  .warn-box strong { color: var(--ann-color); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔌 <span>I2C</span> 时序完全图解</h1>
+  <p>包含所有时序参数（tHD、tSU、tr、tf 等）的完整可视化参考 · 基于 NXP UM10204 规范</p>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection('overview')">📡 完整帧总览</button>
+  <button class="nav-btn" onclick="showSection('start')">🟢 START 条件</button>
+  <button class="nav-btn" onclick="showSection('data')">📊 数据位时序</button>
+  <button class="nav-btn" onclick="showSection('ack')">✅ ACK / NAK</button>
+  <button class="nav-btn" onclick="showSection('stop')">🔴 STOP 条件</button>
+  <button class="nav-btn" onclick="showSection('repstart')">🔁 重复 START</button>
+  <button class="nav-btn" onclick="showSection('params')">📋 参数速查表</button>
+</div>
+
+<div class="main">
+
+<!-- ===================== OVERVIEW ===================== -->
+<div id="overview" class="section active">
+  <div class="section-title">完整 I2C 通信帧结构 <span class="badge">OVERVIEW</span></div>
+  <div class="section-desc">一次完整的 I2C 写操作由 START → 地址帧 → ACK → 数据帧 → ACK → STOP 组成。下图展示了两根总线线路的完整波形，以及各阶段标注。</div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-line" style="background:var(--scl-color)"></div> SCL（时钟线）</div>
+    <div class="legend-item"><div class="legend-line" style="background:var(--sda-color)"></div> SDA（数据线）</div>
+    <div class="legend-item"><div class="legend-line" style="background:var(--ann-color); height:1px; border-top: 1px dashed var(--ann-color)"></div> 时序标注</div>
+  </div>
+
+  <div class="diagram-box">
+    <h3>// 完整通信帧（写操作示例：地址 0x3C，写入 0xAE）</h3>
+    <svg width="1200" height="240" viewBox="0 0 1200 240">
+      <defs>
+        <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L6,3 z" fill="#f78166"/>
+        </marker>
+        <marker id="arrow2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto-start-reverse">
+          <path d="M0,0 L0,6 L6,3 z" fill="#d2a8ff"/>
+        </marker>
+      </defs>
+
+      <!-- Background regions -->
+      <rect x="40" y="10" width="80" height="220" rx="4" fill="rgba(248,81,73,0.06)" stroke="rgba(248,81,73,0.2)" stroke-width="0.5"/>
+      <rect x="120" y="10" width="200" height="220" rx="4" fill="rgba(88,166,255,0.05)" stroke="rgba(88,166,255,0.15)" stroke-width="0.5"/>
+      <rect x="320" y="10" width="60" height="220" rx="4" fill="rgba(210,168,255,0.07)" stroke="rgba(210,168,255,0.2)" stroke-width="0.5"/>
+      <rect x="380" y="10" width="200" height="220" rx="4" fill="rgba(63,185,80,0.05)" stroke="rgba(63,185,80,0.15)" stroke-width="0.5"/>
+      <rect x="580" y="10" width="60" height="220" rx="4" fill="rgba(210,168,255,0.07)" stroke="rgba(210,168,255,0.2)" stroke-width="0.5"/>
+      <rect x="640" y="10" width="480" height="220" rx="4" fill="rgba(255,166,87,0.04)" stroke="rgba(255,166,87,0.12)" stroke-width="0.5"/>
+      <rect x="1120" y="10" width="60" height="220" rx="4" fill="rgba(248,81,73,0.06)" stroke="rgba(248,81,73,0.2)" stroke-width="0.5"/>
+
+      <!-- Region Labels -->
+      <text x="80" y="28" text-anchor="middle" fill="#f85149" font-size="11" font-weight="bold">START</text>
+      <text x="220" y="28" text-anchor="middle" fill="#58a6ff" font-size="11" font-weight="bold">ADDRESS (7bit + R/W=0)</text>
+      <text x="350" y="28" text-anchor="middle" fill="#d2a8ff" font-size="11" font-weight="bold">ACK</text>
+      <text x="480" y="28" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="bold">DATA BYTE (8bit)</text>
+      <text x="610" y="28" text-anchor="middle" fill="#d2a8ff" font-size="11" font-weight="bold">ACK</text>
+      <text x="880" y="28" text-anchor="middle" fill="#ffa657" font-size="11" font-weight="bold">... 更多数据字节 ...</text>
+      <text x="1150" y="28" text-anchor="middle" fill="#f85149" font-size="11" font-weight="bold">STOP</text>
+
+      <!-- SCL Label -->
+      <text x="18" y="100" fill="#58a6ff" font-size="13" font-weight="bold">SCL</text>
+      <!-- SDA Label -->
+      <text x="18" y="180" fill="#3fb950" font-size="13" font-weight="bold">SDA</text>
+
+      <!-- Reference lines -->
+      <line x1="40" y1="75" x2="1190" y2="75" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="4,6"/>
+      <line x1="40" y1="115" x2="1190" y2="115" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="4,6"/>
+      <line x1="40" y1="155" x2="1190" y2="155" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="4,6"/>
+      <line x1="40" y1="195" x2="1190" y2="195" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="4,6"/>
+
+      <!-- H/L Labels -->
+      <text x="44" y="79" fill="rgba(255,255,255,0.25)" font-size="10">H</text>
+      <text x="44" y="119" fill="rgba(255,255,255,0.25)" font-size="10">L</text>
+      <text x="44" y="159" fill="rgba(255,255,255,0.25)" font-size="10">H</text>
+      <text x="44" y="199" fill="rgba(255,255,255,0.25)" font-size="10">L</text>
+
+      <!-- ===== SCL Waveform ===== -->
+      <!-- Idle HIGH -->
+      <polyline points="40,80 80,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- START: SCL stays HIGH -->
+      <polyline points="80,80 120,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- SCL clock pulses for address (7 bits + R/W = 8 clocks) -->
+      <!-- Bit 7 -->
+      <polyline points="120,80 130,115 150,115 160,80 180,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- Bit 6 -->
+      <polyline points="180,80 190,115 205,115 215,80 235,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- Bit 5 -->
+      <polyline points="235,80 245,115 255,115 265,80 285,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- Bit 4 -->
+      <polyline points="285,80 292,115 300,115 308,80 320,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- ACK clock -->
+      <polyline points="320,80 328,115 342,115 350,80 370,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- Data bits (8 clocks) -->
+      <polyline points="380,80 390,115 405,115 415,80 435,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <polyline points="435,80 445,115 455,115 465,80 480,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <polyline points="480,80 490,115 500,115 510,80 525,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <polyline points="525,80 535,115 545,115 555,80 570,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- ACK -->
+      <polyline points="580,80 588,115 598,115 608,80 625,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- More data placeholder -->
+      <polyline points="640,80 650,115 665,115 675,80 700,80" stroke="#58a6ff" stroke-width="2.5" fill="none" stroke-dasharray="3,3" opacity="0.5"/>
+      <!-- ellipsis -->
+      <text x="720" y="100" fill="rgba(88,166,255,0.5)" font-size="18">···</text>
+      <polyline points="780,80 790,115 805,115 815,80 840,80" stroke="#58a6ff" stroke-width="2.5" fill="none" stroke-dasharray="3,3" opacity="0.5"/>
+      <!-- STOP: SCL HIGH -->
+      <polyline points="1100,115 1120,80 1190,80" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+
+      <!-- ===== SDA Waveform ===== -->
+      <!-- Idle HIGH -->
+      <polyline points="40,160 68,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- START: SDA falls while SCL HIGH -->
+      <polyline points="68,160 80,195" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- SDA LOW after START -->
+      <polyline points="80,195 120,195" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+
+      <!-- Address bits: 0x3C = 0b0111100, R/W=0 = 01111000 -->
+      <!-- Bit7=0: LOW -->
+      <polyline points="120,195 127,195 135,195 145,195 155,195 165,195 175,195 180,195" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- Bit6=1: HIGH -->
+      <polyline points="180,160 190,160 200,160 215,160 225,160 235,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- Bit5=1: HIGH -->
+      <polyline points="235,160 245,160 255,160 265,160 275,160 285,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- Bit4=1: HIGH -->
+      <polyline points="285,160 292,160 300,160 310,160 320,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- transitions between bits shown as brief slopes -->
+      <polyline points="180,195 183,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- ACK: SDA pulled LOW by slave -->
+      <polyline points="320,195 360,195 370,195" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <polyline points="320,160 322,195" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+
+      <!-- Data bits shown as generic -->
+      <polyline points="380,160 400,160 412,160 422,195 440,195 452,195 462,160 475,160 480,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <polyline points="480,160 488,195 502,195 512,160 525,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <polyline points="525,160 532,160 545,195 558,195 567,160 578,160 580,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- ACK -->
+      <polyline points="580,195 608,195 616,160 625,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+
+      <!-- more data placeholder -->
+      <text x="720" y="178" fill="rgba(63,185,80,0.5)" font-size="18">···</text>
+
+      <!-- STOP: SDA rises while SCL HIGH -->
+      <polyline points="1100,195 1120,195 1135,160 1190,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+
+      <!-- tBUF annotation at start -->
+      <line x1="40" y1="210" x2="80" y2="210" stroke="#d2a8ff" stroke-width="1.5" marker-end="url(#arrow2)" marker-start="url(#arrow2)"/>
+      <text x="60" y="225" text-anchor="middle" fill="#d2a8ff" font-size="10" font-family="JetBrains Mono, monospace">tBUF</text>
+
+      <!-- tHD;STA annotation -->
+      <line x1="80" y1="210" x2="120" y2="210" stroke="#f78166" stroke-width="1.5" marker-end="url(#arrow2)" marker-start="url(#arrow2)"/>
+      <text x="100" y="225" text-anchor="middle" fill="#f78166" font-size="9.5" font-family="JetBrains Mono, monospace">tHD;STA</text>
+
+      <!-- tSU;STO annotation -->
+      <line x1="1100" y1="210" x2="1120" y2="210" stroke="#f78166" stroke-width="1.5" marker-end="url(#arrow2)" marker-start="url(#arrow2)"/>
+      <text x="1110" y="225" text-anchor="middle" fill="#f78166" font-size="9" font-family="JetBrains Mono, monospace">tSU;STO</text>
+    </svg>
+  </div>
+
+  <div class="explain-grid">
+    <div class="explain-card">
+      <h4><div class="dot dot-ann"></div> 通信流程说明</h4>
+      <p>① <strong style="color:#fff">Idle（空闲）</strong>：总线空闲时，SCL 和 SDA 均被上拉电阻拉至高电平。<br><br>
+      ② <strong style="color:#fff">START</strong>：SCL 保持高电平期间，SDA 产生下降沿，宣告通信开始。<br><br>
+      ③ <strong style="color:#fff">地址帧</strong>：主机发出 7 位设备地址 + 1 位 R/W（读写）标志，共 8 个时钟周期。<br><br>
+      ④ <strong style="color:#fff">ACK</strong>：每 8 位数据后，接收方在第 9 个时钟周期拉低 SDA 表示确认。<br><br>
+      ⑤ <strong style="color:#fff">数据帧</strong>：一个或多个字节，同样每字节后跟一个 ACK。<br><br>
+      ⑥ <strong style="color:#fff">STOP</strong>：SCL 保持高电平期间，SDA 产生上升沿，宣告通信结束。</p>
+    </div>
+    <div class="explain-card">
+      <h4><div class="dot dot-time"></div> 谁控制 SDA？</h4>
+      <p><strong style="color:#fff">正常数据传输时</strong>：发送方（主机写数据时是主机，从机写 ACK 时是从机）控制 SDA。<br><br>
+      <strong style="color:#fff">ACK 期间</strong>：控制权交给接收方。主机释放 SDA（SDA 变高），从机将其拉低表示 ACK，或不拉低表示 NAK。<br><br>
+      <strong style="color:#fff">读操作时</strong>：地址帧 + ACK 由主机/从机协作；数据阶段由从机发送数据，主机提供 ACK。<br><br>
+      这种控制权的动态切换是 I2C 协议最精妙也最容易混淆的地方。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== START ===================== -->
+<div id="start" class="section">
+  <div class="section-title">START 条件时序 <span class="badge">START CONDITION</span></div>
+  <div class="section-desc">START 条件是每次 I2C 通信的起点，定义为：在 SCL 保持高电平期间，SDA 出现下降沿。此时总线被主机独占，进入"忙"状态。</div>
+
+  <div class="diagram-box">
+    <h3>// START 条件详细时序图（含所有参数标注）</h3>
+    <svg width="900" height="300" viewBox="0 0 900 300">
+      <defs>
+        <marker id="arr1" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#d2a8ff"/>
+        </marker>
+        <marker id="arr1r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#d2a8ff"/>
+        </marker>
+        <marker id="arr2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#f78166"/>
+        </marker>
+        <marker id="arr2r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#f78166"/>
+        </marker>
+        <marker id="arr3" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#ffa657"/>
+        </marker>
+        <marker id="arr3r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#ffa657"/>
+        </marker>
+      </defs>
+
+      <!-- Grid lines -->
+      <line x1="60" y1="60" x2="880" y2="60" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="60" y1="110" x2="880" y2="110" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="60" y1="160" x2="880" y2="160" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="60" y1="210" x2="880" y2="210" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+      <text x="30" y="65" fill="#58a6ff" font-size="13" font-weight="bold">SCL</text>
+      <text x="30" y="165" fill="#3fb950" font-size="13" font-weight="bold">SDA</text>
+
+      <!-- H/L markers -->
+      <text x="62" y="65" fill="rgba(255,255,255,0.3)" font-size="11">H</text>
+      <text x="62" y="115" fill="rgba(255,255,255,0.3)" font-size="11">L</text>
+      <text x="62" y="165" fill="rgba(255,255,255,0.3)" font-size="11">H</text>
+      <text x="62" y="215" fill="rgba(255,255,255,0.3)" font-size="11">L</text>
+
+      <!-- Vertical reference lines -->
+      <line x1="200" y1="40" x2="200" y2="250" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="5,5"/>
+      <line x1="380" y1="40" x2="380" y2="250" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="5,5"/>
+      <line x1="520" y1="40" x2="520" y2="250" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="5,5"/>
+      <line x1="680" y1="40" x2="680" y2="250" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="5,5"/>
+
+      <!-- SCL Waveform -->
+      <!-- Idle HIGH → START: SCL stays HIGH throughout START -->
+      <polyline points="80,65 800,65" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- SCL falls after tHD;STA -->
+      <polyline points="680,65 720,110 800,110" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+
+      <!-- SCL rise time annotation: tf on falling edge -->
+      <line x1="680" y1="45" x2="720" y2="45" stroke="#ffa657" stroke-width="1.5" marker-end="url(#arr3)" marker-start="url(#arr3r)"/>
+      <text x="700" y="40" text-anchor="middle" fill="#ffa657" font-size="11" font-family="JetBrains Mono">tf</text>
+
+      <!-- SDA Waveform -->
+      <!-- Bus free: SDA HIGH -->
+      <polyline points="80,165 200,165" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- SDA falls (START condition) -->
+      <polyline points="200,165 240,210" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- SDA stays LOW -->
+      <polyline points="240,210 800,210" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+
+      <!-- tBUF: bus free time -->
+      <line x1="80" y1="240" x2="200" y2="240" stroke="#d2a8ff" stroke-width="1.5" marker-end="url(#arr1)" marker-start="url(#arr1r)"/>
+      <text x="140" y="255" text-anchor="middle" fill="#d2a8ff" font-size="12" font-family="JetBrains Mono">tBUF</text>
+      <text x="140" y="268" text-anchor="middle" fill="#8b949e" font-size="10">总线空闲时间</text>
+
+      <!-- SDA fall time tf -->
+      <line x1="200" y1="240" x2="240" y2="240" stroke="#ffa657" stroke-width="1.5" marker-end="url(#arr3)" marker-start="url(#arr3r)"/>
+      <text x="220" y="255" text-anchor="middle" fill="#ffa657" font-size="11" font-family="JetBrains Mono">tf</text>
+
+      <!-- tHD;STA: Hold time for START -->
+      <line x1="240" y1="240" x2="680" y2="240" stroke="#f78166" stroke-width="1.5" marker-end="url(#arr2)" marker-start="url(#arr2r)"/>
+      <text x="460" y="255" text-anchor="middle" fill="#f78166" font-size="12" font-family="JetBrains Mono">tHD;STA</text>
+      <text x="460" y="268" text-anchor="middle" fill="#8b949e" font-size="10">START 保持时间（SDA↓ 到 SCL↓）</text>
+
+      <!-- Vertical drop lines for annotation -->
+      <line x1="240" y1="210" x2="240" y2="244" stroke="rgba(255,166,87,0.5)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="680" y1="65" x2="680" y2="244" stroke="rgba(247,129,102,0.5)" stroke-width="1" stroke-dasharray="3,3"/>
+      <line x1="200" y1="165" x2="200" y2="244" stroke="rgba(210,168,255,0.5)" stroke-width="1" stroke-dasharray="3,3"/>
+
+      <!-- Event labels -->
+      <text x="200" y="145" text-anchor="middle" fill="#f85149" font-size="11" font-weight="bold">SDA↓</text>
+      <text x="200" y="133" text-anchor="middle" fill="#f85149" font-size="10">START事件</text>
+      <text x="680" y="50" text-anchor="middle" fill="#58a6ff" font-size="10">SCL↓</text>
+
+      <!-- SDA tf annotation -->
+      <line x1="200" y1="130" x2="200" y2="138" stroke="#f85149" stroke-width="1"/>
+      <line x1="200" y1="138" x2="218" y2="138" stroke="#f85149" stroke-width="1" marker-end="url(#arr2)"/>
+    </svg>
+  </div>
+
+  <div class="param-grid">
+    <div class="param-card hold">
+      <div class="param-name">tHD;STA</div>
+      <div class="param-full">Hold Time for (repeated) START condition</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≥ 4.0 µs</span>
+        <span class="param-val fm">FM: ≥ 0.6 µs</span>
+        <span class="param-val fmplus">FM+: ≥ 0.26 µs</span>
+      </div>
+      <div class="param-desc">
+        从 SDA 下降沿（START 事件）到 SCL 下降沿之间的最小时间。
+        在这段时间内 SCL 必须保持高电平，以确保总线上所有设备都能识别 START 条件。
+        过短会导致某些慢速设备无法检测到 START 信号。
+      </div>
+    </div>
+    <div class="param-card timing">
+      <div class="param-name">tBUF</div>
+      <div class="param-full">Bus Free Time Between STOP and START</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≥ 4.7 µs</span>
+        <span class="param-val fm">FM: ≥ 1.3 µs</span>
+        <span class="param-val fmplus">FM+: ≥ 0.5 µs</span>
+      </div>
+      <div class="param-desc">
+        上一次 STOP 条件结束后，到下一次 START 条件开始之间，总线必须空闲的最小时间。
+        这是给总线上所有设备"复位"和准备接收的窗口期。
+        SDA 和 SCL 都必须保持高电平。
+      </div>
+    </div>
+    <div class="param-card rise">
+      <div class="param-name">tf （SDA）</div>
+      <div class="param-full">SDA Fall Time（下降时间）</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≤ 300 ns</span>
+        <span class="param-val fm">FM: ≤ 300 ns</span>
+        <span class="param-val fmplus">FM+: ≤ 120 ns</span>
+      </div>
+      <div class="param-desc">
+        信号从高电平的 70%（VIH）下降到低电平的 30%（VIL）所需的时间。
+        由驱动器的输出能力和总线电容共同决定。
+        过慢说明驱动能力不足，过快可能引起振铃（需串联小阻尼电阻）。
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>💡 为什么 START 定义为"SCL 高时 SDA 下降"？</strong><br>
+    I2C 数据有效期规则规定：SCL 高电平期间，SDA 必须保持稳定（变化只能在 SCL 低时发生）。
+    因此，"SCL 高时 SDA 变化"这一特殊事件被协议保留用作控制信号——下降沿就是 START，上升沿就是 STOP。
+    这样设计无需额外信号线，就能在数据流中插入控制帧。
+  </div>
+</div>
+
+<!-- ===================== DATA BIT ===================== -->
+<div id="data" class="section">
+  <div class="section-title">数据位时序 <span class="badge">DATA BIT TIMING</span></div>
+  <div class="section-desc">数据位是 I2C 通信最核心的重复单元。每一位的有效期在 SCL 高电平期间，SDA 的变化必须严格在 SCL 低电平期间完成。</div>
+
+  <div class="diagram-box">
+    <h3>// 单个数据位的完整时序参数（以连续两位为例）</h3>
+    <svg width="1000" height="320" viewBox="0 0 1000 320">
+      <defs>
+        <marker id="da1" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#d2a8ff"/></marker>
+        <marker id="da1r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#d2a8ff"/></marker>
+        <marker id="da2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#f78166"/></marker>
+        <marker id="da2r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#f78166"/></marker>
+        <marker id="da3" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#ffa657"/></marker>
+        <marker id="da3r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#ffa657"/></marker>
+        <marker id="da4" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#3fb950"/></marker>
+        <marker id="da4r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse">
+          <path d="M0,0 L0,7 L7,3.5 z" fill="#3fb950"/></marker>
+      </defs>
+
+      <!-- reference lines -->
+      <line x1="50" y1="60" x2="970" y2="60" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="50" y1="110" x2="970" y2="110" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="50" y1="165" x2="970" y2="165" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="50" y1="215" x2="970" y2="215" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+      <text x="18" y="67" fill="#58a6ff" font-size="13" font-weight="bold">SCL</text>
+      <text x="18" y="172" fill="#3fb950" font-size="13" font-weight="bold">SDA</text>
+
+      <text x="52" y="65" fill="rgba(255,255,255,0.25)" font-size="10">H</text>
+      <text x="52" y="115" fill="rgba(255,255,255,0.25)" font-size="10">L</text>
+      <text x="52" y="170" fill="rgba(255,255,255,0.25)" font-size="10">H</text>
+      <text x="52" y="220" fill="rgba(255,255,255,0.25)" font-size="10">L</text>
+
+      <!-- Key vertical positions: 
+           A=100 (SCL rise start), B=160 (SCL H stable), C=400 (SCL fall start), D=460(SCL L), 
+           E=540(SCL rise start2), F=600(SCL H stable2), G=840(SCL fall2)
+           SDA change zone: between D and A(next) -->
+
+      <!-- SCL waveform: Bit N (LOW→HIGH→LOW) then Bit N+1 (LOW→HIGH→LOW) -->
+      <!-- Pre-state: SCL LOW -->
+      <polyline points="60,110 100,110" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- SCL rise (tr) -->
+      <polyline points="100,110 140,65" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- SCL HIGH (tHIGH) -->
+      <polyline points="140,65 440,65" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- SCL fall (tf) -->
+      <polyline points="440,65 480,110" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- SCL LOW (tLOW) -->
+      <polyline points="480,110 580,110" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- SCL rise bit N+1 -->
+      <polyline points="580,110 620,65" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- SCL HIGH bit N+1 -->
+      <polyline points="620,65 880,65" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- SCL fall bit N+1 -->
+      <polyline points="880,65 920,110" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <polyline points="920,110 960,110" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+
+      <!-- SDA waveform: Bit N = HIGH, Bit N+1 = LOW -->
+      <!-- Bit N: SDA HIGH (valid during SCL HIGH) -->
+      <polyline points="60,165 480,165" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- tHD;DAT: SDA hold after SCL falls (480→530) -->
+      <!-- At 530: SDA starts changing (tSU;DAT before next SCL rise at 580) -->
+      <!-- tSU;DAT window: 530→580 = 50px for setup before next SCL rise -->
+      <!-- SDA transition LOW at 530 (within tLOW window) -->
+      <polyline points="530,165 570,215" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- Bit N+1: SDA LOW -->
+      <polyline points="570,215 960,215" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+
+      <!-- ===== ANNOTATIONS ===== -->
+
+      <!-- tLOW: 480→580 SCL low period -->
+      <line x1="480" y1="285" x2="580" y2="285" stroke="#d2a8ff" stroke-width="1.5" marker-end="url(#da1)" marker-start="url(#da1r)"/>
+      <line x1="480" y1="110" x2="480" y2="289" stroke="rgba(210,168,255,0.3)" stroke-width="1" stroke-dasharray="3,4"/>
+      <line x1="580" y1="110" x2="580" y2="289" stroke="rgba(210,168,255,0.3)" stroke-width="1" stroke-dasharray="3,4"/>
+      <text x="530" y="300" text-anchor="middle" fill="#d2a8ff" font-size="12" font-family="JetBrains Mono">tLOW</text>
+      <text x="530" y="313" text-anchor="middle" fill="#8b949e" font-size="10">SCL低电平时间</text>
+
+      <!-- tHIGH: 140→440 -->
+      <line x1="140" y1="285" x2="440" y2="285" stroke="#d2a8ff" stroke-width="1.5" marker-end="url(#da1)" marker-start="url(#da1r)"/>
+      <line x1="140" y1="65" x2="140" y2="289" stroke="rgba(210,168,255,0.3)" stroke-width="1" stroke-dasharray="3,4"/>
+      <line x1="440" y1="65" x2="440" y2="289" stroke="rgba(210,168,255,0.3)" stroke-width="1" stroke-dasharray="3,4"/>
+      <text x="290" y="300" text-anchor="middle" fill="#d2a8ff" font-size="12" font-family="JetBrains Mono">tHIGH</text>
+      <text x="290" y="313" text-anchor="middle" fill="#8b949e" font-size="10">SCL高电平时间</text>
+
+      <!-- tr: 100→140 (SCL rise) -->
+      <line x1="100" y1="48" x2="140" y2="48" stroke="#ffa657" stroke-width="1.5" marker-end="url(#da3)" marker-start="url(#da3r)"/>
+      <text x="120" y="43" text-anchor="middle" fill="#ffa657" font-size="11" font-family="JetBrains Mono">tr</text>
+
+      <!-- tf: 440→480 (SCL fall) -->
+      <line x1="440" y1="48" x2="480" y2="48" stroke="#ffa657" stroke-width="1.5" marker-end="url(#da3)" marker-start="url(#da3r)"/>
+      <text x="460" y="43" text-anchor="middle" fill="#ffa657" font-size="11" font-family="JetBrains Mono">tf</text>
+
+      <!-- tHD;DAT: 480→530 (SDA hold after SCL fall) -->
+      <line x1="480" y1="235" x2="530" y2="235" stroke="#ffa657" stroke-width="1.5" marker-end="url(#da3)" marker-start="url(#da3r)"/>
+      <line x1="530" y1="165" x2="530" y2="239" stroke="rgba(255,166,87,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <text x="505" y="250" text-anchor="middle" fill="#ffa657" font-size="10.5" font-family="JetBrains Mono">tHD;DAT</text>
+      <text x="505" y="262" text-anchor="middle" fill="#8b949e" font-size="9.5">数据保持时间</text>
+
+      <!-- tSU;DAT: 570→620 (SDA setup before next SCL rise) -->
+      <!-- SDA stable at LOW from 570, next SCL rise at 580→620 (use 620 as fully HIGH) -->
+      <line x1="570" y1="235" x2="620" y2="235" stroke="#3fb950" stroke-width="1.5" marker-end="url(#da4)" marker-start="url(#da4r)"/>
+      <line x1="570" y1="215" x2="570" y2="239" stroke="rgba(63,185,80,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <line x1="620" y1="65" x2="620" y2="239" stroke="rgba(63,185,80,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <text x="595" y="250" text-anchor="middle" fill="#3fb950" font-size="10.5" font-family="JetBrains Mono">tSU;DAT</text>
+      <text x="595" y="262" text-anchor="middle" fill="#8b949e" font-size="9.5">数据建立时间</text>
+
+      <!-- tr for second SCL: 580→620 -->
+      <line x1="580" y1="48" x2="620" y2="48" stroke="#ffa657" stroke-width="1.5" marker-end="url(#da3)" marker-start="url(#da3r)"/>
+      <text x="600" y="43" text-anchor="middle" fill="#ffa657" font-size="11" font-family="JetBrains Mono">tr</text>
+
+      <!-- "DATA VALID" zone label during SCL HIGH -->
+      <rect x="150" y="130" width="280" height="24" rx="4" fill="rgba(88,166,255,0.1)" stroke="rgba(88,166,255,0.3)" stroke-width="0.5"/>
+      <text x="290" y="146" text-anchor="middle" fill="#58a6ff" font-size="11" font-family="JetBrains Mono">◀── DATA VALID (SDA 必须稳定) ──▶</text>
+
+      <!-- Bit label -->
+      <text x="290" y="90" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="11">Bit N = 1 (HIGH)</text>
+      <text x="760" y="90" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="11">Bit N+1 = 0 (LOW)</text>
+
+      <!-- SDA change zone -->
+      <rect x="480" y="145" width="110" height="80" rx="3" fill="rgba(255,166,87,0.05)" stroke="rgba(255,166,87,0.2)" stroke-width="0.5" stroke-dasharray="4,3"/>
+      <text x="535" y="138" text-anchor="middle" fill="rgba(255,166,87,0.7)" font-size="10">SDA 允许变化区</text>
+    </svg>
+  </div>
+
+  <div class="param-grid">
+    <div class="param-card timing">
+      <div class="param-name">tHIGH</div>
+      <div class="param-full">HIGH Period of the SCL Clock</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≥ 4.0 µs</span>
+        <span class="param-val fm">FM: ≥ 0.6 µs</span>
+        <span class="param-val fmplus">FM+: ≥ 0.26 µs</span>
+      </div>
+      <div class="param-desc">SCL 高电平持续的最短时间。这段时间内，SDA 上的数据必须保持稳定，接收方在此期间采样数据。时间过短会导致接收方来不及采样。</div>
+    </div>
+    <div class="param-card timing">
+      <div class="param-name">tLOW</div>
+      <div class="param-full">LOW Period of the SCL Clock</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≥ 4.7 µs</span>
+        <span class="param-val fm">FM: ≥ 1.3 µs</span>
+        <span class="param-val fmplus">FM+: ≥ 0.5 µs</span>
+      </div>
+      <div class="param-desc">SCL 低电平持续的最短时间。这段时间是发送方改变 SDA 数据（进行位切换）的窗口，必须足够长以完成 SDA 的建立（tSU;DAT）和保持（tHD;DAT）。</div>
+    </div>
+    <div class="param-card rise">
+      <div class="param-name">tr</div>
+      <div class="param-full">Rise Time of both SDA and SCL Signals</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≤ 1000 ns</span>
+        <span class="param-val fm">FM: ≤ 300 ns</span>
+        <span class="param-val fmplus">FM+: ≤ 120 ns</span>
+      </div>
+      <div class="param-desc">信号从低电平 30% 上升到高电平 70% 所需的时间。由上拉电阻 × 总线电容（RC）决定。上拉电阻越小、电容越小，tr 越快。计算公式：<code>tr ≈ 0.847 × Rp × Cb</code></div>
+    </div>
+    <div class="param-card rise">
+      <div class="param-name">tf</div>
+      <div class="param-full">Fall Time of both SDA and SCL Signals</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≤ 300 ns</span>
+        <span class="param-val fm">FM: ≤ 300 ns</span>
+        <span class="param-val fmplus">FM+: ≤ 120 ns</span>
+      </div>
+      <div class="param-desc">信号从高电平 70% 下降到低电平 30% 所需时间。由驱动器的灌电流（Sink Current）能力决定，通常比 tr 快得多。tf 不受上拉电阻影响，受限于驱动器输出晶体管。</div>
+    </div>
+    <div class="param-card hold">
+      <div class="param-name">tHD;DAT</div>
+      <div class="param-full">Data Hold Time</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≥ 0 ns, ≤ 3.45 µs</span>
+        <span class="param-val fm">FM: ≥ 0 ns, ≤ 0.9 µs</span>
+        <span class="param-val fmplus">FM+: ≥ 0 ns</span>
+      </div>
+      <div class="param-desc">SCL 下降沿之后，SDA 上的数据还需要继续保持有效的最小时间。理论最小值为 0ns，但实际中受传播延迟影响应 ≥ 0。上限是为防止误触发 START/STOP 条件。</div>
+    </div>
+    <div class="param-card setup">
+      <div class="param-name">tSU;DAT</div>
+      <div class="param-full">Data Setup Time</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≥ 250 ns</span>
+        <span class="param-val fm">FM: ≥ 100 ns</span>
+        <span class="param-val fmplus">FM+: ≥ 50 ns</span>
+      </div>
+      <div class="param-desc">SDA 数据稳定后到 SCL 上升沿之间的最小时间。确保接收方在 SCL 上升沿到来时，SDA 上的数据已经完全稳定可读。这是影响最高通信速度的关键参数之一。</div>
+    </div>
+  </div>
+
+  <div class="warn-box">
+    <strong>⚠️ tHD;DAT 有上限！</strong> 这一点很多人忽略。tHD;DAT 不仅有最小值（防止数据过早变化），还有最大值（SM ≤ 3.45µs，FM ≤ 0.9µs）。如果 SCL 落下后 SDA 迟迟不变化，可能导致对端（或总线监听者）误判为 STOP 条件！
+  </div>
+</div>
+
+<!-- ===================== ACK ===================== -->
+<div id="ack" class="section">
+  <div class="section-title">ACK / NAK 时序 <span class="badge">ACKNOWLEDGE</span></div>
+  <div class="section-desc">每传输完 8 个数据位后，紧跟第 9 个时钟脉冲。此时控制权交给接收方：接收方拉低 SDA = ACK（确认），保持高 = NAK（不确认/结束）。</div>
+
+  <div class="diagram-box">
+    <h3>// 第 8 位数据 → ACK → 下一字节开始 的完整时序</h3>
+    <svg width="950" height="290" viewBox="0 0 950 290">
+      <defs>
+        <marker id="ac1" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#d2a8ff"/></marker>
+        <marker id="ac1r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse"><path d="M0,0 L0,7 L7,3.5 z" fill="#d2a8ff"/></marker>
+        <marker id="ac2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#3fb950"/></marker>
+        <marker id="ac2r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse"><path d="M0,0 L0,7 L7,3.5 z" fill="#3fb950"/></marker>
+      </defs>
+
+      <!-- Phase regions -->
+      <rect x="50" y="15" width="200" height="220" rx="4" fill="rgba(88,166,255,0.04)" stroke="rgba(88,166,255,0.1)" stroke-width="0.5"/>
+      <rect x="250" y="15" width="220" height="220" rx="4" fill="rgba(210,168,255,0.08)" stroke="rgba(210,168,255,0.2)" stroke-width="0.5"/>
+      <rect x="470" y="15" width="200" height="220" rx="4" fill="rgba(63,185,80,0.04)" stroke="rgba(63,185,80,0.1)" stroke-width="0.5"/>
+      <rect x="670" y="15" width="220" height="220" rx="4" fill="rgba(88,166,255,0.04)" stroke="rgba(88,166,255,0.1)" stroke-width="0.5"/>
+
+      <text x="150" y="32" text-anchor="middle" fill="rgba(88,166,255,0.7)" font-size="11" font-weight="bold">第 8 位数据</text>
+      <text x="360" y="32" text-anchor="middle" fill="rgba(210,168,255,0.9)" font-size="11" font-weight="bold">ACK / NAK 位（第9时钟）</text>
+      <text x="570" y="32" text-anchor="middle" fill="rgba(63,185,80,0.7)" font-size="11" font-weight="bold">释放总线</text>
+      <text x="780" y="32" text-anchor="middle" fill="rgba(88,166,255,0.7)" font-size="11" font-weight="bold">下一字节第 1 位</text>
+
+      <!-- reference lines -->
+      <line x1="50" y1="65" x2="920" y2="65" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="50" y1="110" x2="920" y2="110" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="50" y1="160" x2="920" y2="160" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="50" y1="205" x2="920" y2="205" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+      <text x="18" y="70" fill="#58a6ff" font-size="13" font-weight="bold">SCL</text>
+      <text x="18" y="167" fill="#3fb950" font-size="13" font-weight="bold">SDA</text>
+
+      <!-- SCL waveform -->
+      <!-- Bit 8 clock (already high) -->
+      <polyline points="60,110 90,110 100,70 300,70 310,110 360,110" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- ACK clock: 9th pulse -->
+      <polyline points="360,110 370,70 540,70 550,110 600,110" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- Next byte bit1 clock -->
+      <polyline points="600,110 610,70 780,70 790,110 840,110" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <polyline points="840,110 880,110" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+
+      <!-- SDA: Transmitter sends DATA (HIGH in this case = bit=1) -->
+      <polyline points="60,160 310,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- After SCL falls (310): Transmitter releases SDA → SDA goes HIGH (pulled up) -->
+      <!-- 控制权转移 -->
+      <polyline points="310,160 340,160" stroke="#3fb950" stroke-width="2.5" fill="none" stroke-dasharray="5,3" opacity="0.5"/>
+      <!-- Receiver (slave) pulls SDA LOW for ACK -->
+      <polyline points="340,205 550,205" stroke="#d2a8ff" stroke-width="2.5" fill="none"/>
+      <!-- show transition: at 310 transmitter releases, at 340 slave grabs -->
+      <text x="325" y="145" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="10">控制权</text>
+      <text x="325" y="157" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="10">交接</text>
+
+      <!-- After ACK (SCL falls at 550): SDA released by slave, goes HIGH -->
+      <polyline points="550,205 580,160 600,160" stroke="#d2a8ff" stroke-width="2.5" fill="none" opacity="0.6"/>
+      <!-- Transmitter takes control for next byte -->
+      <polyline points="600,160 840,160" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+
+      <!-- NAK alternative: dashed HIGH line -->
+      <text x="455" y="148" text-anchor="middle" fill="#f85149" font-size="10">─ ─ ─ NAK ─ ─ ─</text>
+      <line x1="340" y1="158" x2="550" y2="158" stroke="#f85149" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.5"/>
+      <text x="455" y="170" text-anchor="middle" fill="#f85149" font-size="9">(SDA 保持高 = NAK)</text>
+
+      <!-- "DATA VALID" region for ACK -->
+      <rect x="376" y="78" width="158" height="20" rx="3" fill="rgba(210,168,255,0.1)" stroke="rgba(210,168,255,0.3)" stroke-width="0.5"/>
+      <text x="455" y="92" text-anchor="middle" fill="#d2a8ff" font-size="10" font-family="JetBrains Mono">ACK VALID (SCL HIGH)</text>
+
+      <!-- Annotation: tHD;DAT after ACK SCL fall -->
+      <line x1="550" y1="255" x2="580" y2="255" stroke="#ffa657" stroke-width="1.5" marker-end="url(#ac1)" marker-start="url(#ac1r)"/>
+      <line x1="550" y1="205" x2="550" y2="259" stroke="rgba(255,166,87,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <line x1="580" y1="160" x2="580" y2="259" stroke="rgba(255,166,87,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <text x="565" y="270" text-anchor="middle" fill="#ffa657" font-size="10" font-family="JetBrains Mono">tHD;DAT</text>
+
+      <!-- tSU;DAT before next byte's SCL rise -->
+      <line x1="580" y1="255" x2="610" y2="255" stroke="#3fb950" stroke-width="1.5" marker-end="url(#ac2)" marker-start="url(#ac2r)"/>
+      <line x1="610" y1="70" x2="610" y2="259" stroke="rgba(63,185,80,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <text x="595" y="270" text-anchor="middle" fill="#3fb950" font-size="10" font-family="JetBrains Mono">tSU;DAT</text>
+
+      <!-- Labels -->
+      <text x="100" y="145" fill="rgba(255,255,255,0.5)" font-size="10">发送方 控制 SDA</text>
+      <text x="455" y="228" fill="rgba(210,168,255,0.7)" font-size="10" text-anchor="middle">接收方 控制 SDA → ACK=LOW</text>
+      <text x="720" y="145" fill="rgba(255,255,255,0.5)" font-size="10" text-anchor="middle">发送方 控制 SDA</text>
+    </svg>
+  </div>
+
+  <div class="explain-grid">
+    <div class="explain-card">
+      <h4><div class="dot dot-sda"></div> ACK（Acknowledge，确认）</h4>
+      <p>接收方在第 9 个 SCL 脉冲期间，将 SDA <strong style="color:#fff">拉低（LOW）</strong>。<br><br>
+      主机写数据时：<strong style="color:#fff">从机</strong> 发出 ACK，表示"收到了，继续！"<br><br>
+      主机读数据时：<strong style="color:#fff">主机</strong> 发出 ACK，表示"给我更多数据"；发出 NAK，表示"已够，请停止。"</p>
+    </div>
+    <div class="explain-card">
+      <h4><div class="dot dot-ann"></div> NAK（Not Acknowledge，不确认）</h4>
+      <p>接收方<strong style="color:#fff">不拉低 SDA</strong>，保持高电平（依靠上拉电阻），即为 NAK。<br><br>
+      NAK 可能意味着：① 地址错误，设备不存在；② 数据错误，拒绝接收；③ 主机读完最后一字节，通知从机停止；④ 设备忙碌，暂时无法响应。</p>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>💡 时钟拉伸（Clock Stretching）</strong>：从机如果处理太慢，可以在 ACK 位的 SCL 低电平期间将 SCL 继续<strong>拉低保持</strong>，强迫主机等待——这叫时钟拉伸。只有主机才能拉高 SCL；但从机可以强行延长低电平。主机在释放 SCL（让 SCL 上升）后，需要检测 SCL 是否真的变高，如果没有，说明从机在拉伸时钟，主机必须等待。
+  </div>
+</div>
+
+<!-- ===================== STOP ===================== -->
+<div id="stop" class="section">
+  <div class="section-title">STOP 条件时序 <span class="badge">STOP CONDITION</span></div>
+  <div class="section-desc">STOP 条件是通信的终止符，定义为：在 SCL 保持高电平期间，SDA 出现上升沿。执行 STOP 后，总线回到空闲状态，SDA 和 SCL 均为高。</div>
+
+  <div class="diagram-box">
+    <h3>// STOP 条件详细时序（含 tSU;STO 和 tBUF）</h3>
+    <svg width="900" height="290" viewBox="0 0 900 290">
+      <defs>
+        <marker id="sp1" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#d2a8ff"/></marker>
+        <marker id="sp1r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse"><path d="M0,0 L0,7 L7,3.5 z" fill="#d2a8ff"/></marker>
+        <marker id="sp2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#f78166"/></marker>
+        <marker id="sp2r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse"><path d="M0,0 L0,7 L7,3.5 z" fill="#f78166"/></marker>
+        <marker id="sp3" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#ffa657"/></marker>
+        <marker id="sp3r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse"><path d="M0,0 L0,7 L7,3.5 z" fill="#ffa657"/></marker>
+      </defs>
+
+      <text x="18" y="70" fill="#58a6ff" font-size="13" font-weight="bold">SCL</text>
+      <text x="18" y="172" fill="#3fb950" font-size="13" font-weight="bold">SDA</text>
+
+      <!-- ref lines -->
+      <line x1="60" y1="65" x2="880" y2="65" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="60" y1="110" x2="880" y2="110" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="60" y1="165" x2="880" y2="165" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="60" y1="210" x2="880" y2="210" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+      <!-- Vertical guides -->
+      <line x1="200" y1="40" x2="200" y2="260" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="5,5"/>
+      <line x1="320" y1="40" x2="320" y2="260" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="5,5"/>
+      <line x1="500" y1="40" x2="500" y2="260" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="5,5"/>
+      <line x1="620" y1="40" x2="620" y2="260" stroke="rgba(255,255,255,0.07)" stroke-width="1" stroke-dasharray="5,5"/>
+
+      <!-- SCL: Last bit LOW → rises → stays HIGH (STOP requires SCL HIGH) -->
+      <polyline points="60,110 200,110" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- SCL rises -->
+      <polyline points="200,110 240,65" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+      <!-- SCL HIGH for tSU;STO -->
+      <polyline points="240,65 880,65" stroke="#58a6ff" stroke-width="2.5" fill="none"/>
+
+      <!-- tr annotation on SCL -->
+      <line x1="200" y1="48" x2="240" y2="48" stroke="#ffa657" stroke-width="1.5" marker-end="url(#sp3)" marker-start="url(#sp3r)"/>
+      <text x="220" y="43" text-anchor="middle" fill="#ffa657" font-size="11" font-family="JetBrains Mono">tr</text>
+
+      <!-- SDA: was LOW (sending 0 or last bit) → must be LOW before SCL rises for STOP setup -->
+      <!-- SDA LOW from start -->
+      <polyline points="60,210 320,210" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- SDA held LOW through tSU;STO window after SCL rises -->
+      <polyline points="320,210 500,210" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- SDA rises = STOP event -->
+      <polyline points="500,210 540,165" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+      <!-- SDA HIGH = idle -->
+      <polyline points="540,165 880,165" stroke="#3fb950" stroke-width="2.5" fill="none"/>
+
+      <!-- tf on SDA rise (it's actually tr here - SDA rising) -->
+      <line x1="500" y1="232" x2="540" y2="232" stroke="#ffa657" stroke-width="1.5" marker-end="url(#sp3)" marker-start="url(#sp3r)"/>
+      <text x="520" y="245" text-anchor="middle" fill="#ffa657" font-size="10" font-family="JetBrains Mono">tr(SDA)</text>
+
+      <!-- tSU;STO: SCL rises (240) to SDA rises (500) -- measured from when SCL is HIGH and stable -->
+      <line x1="240" y1="255" x2="500" y2="255" stroke="#f78166" stroke-width="1.5" marker-end="url(#sp2)" marker-start="url(#sp2r)"/>
+      <line x1="240" y1="65" x2="240" y2="259" stroke="rgba(247,129,102,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <line x1="500" y1="210" x2="500" y2="259" stroke="rgba(247,129,102,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <text x="370" y="272" text-anchor="middle" fill="#f78166" font-size="12" font-family="JetBrains Mono">tSU;STO</text>
+      <text x="370" y="284" text-anchor="middle" fill="#8b949e" font-size="10">STOP 建立时间（SCL↑ 到 SDA↑）</text>
+
+      <!-- tBUF: after SDA rises (540) to next START -->
+      <line x1="620" y1="255" x2="800" y2="255" stroke="#d2a8ff" stroke-width="1.5" marker-end="url(#sp1)" marker-start="url(#sp1r)"/>
+      <line x1="620" y1="165" x2="620" y2="259" stroke="rgba(210,168,255,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <text x="710" y="272" text-anchor="middle" fill="#d2a8ff" font-size="12" font-family="JetBrains Mono">tBUF</text>
+      <text x="710" y="284" text-anchor="middle" fill="#8b949e" font-size="10">到下一次 START 的空闲时间</text>
+
+      <!-- Labels -->
+      <text x="370" y="188" text-anchor="middle" fill="rgba(247,129,102,0.8)" font-size="11">← SDA 必须保持 LOW →</text>
+      <text x="500" y="148" text-anchor="middle" fill="#f85149" font-size="12" font-weight="bold">STOP!</text>
+      <text x="500" y="133" text-anchor="middle" fill="#f85149" font-size="10">SDA 上升沿</text>
+      <text x="710" y="148" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="11">总线空闲 (Idle)</text>
+
+      <!-- SCL H stable label -->
+      <text x="370" y="88" text-anchor="middle" fill="rgba(88,166,255,0.6)" font-size="10">← SCL 保持 HIGH 期间 →</text>
+    </svg>
+  </div>
+
+  <div class="param-grid">
+    <div class="param-card setup">
+      <div class="param-name">tSU;STO</div>
+      <div class="param-full">Setup Time for STOP Condition</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≥ 4.0 µs</span>
+        <span class="param-val fm">FM: ≥ 0.6 µs</span>
+        <span class="param-val fmplus">FM+: ≥ 0.26 µs</span>
+      </div>
+      <div class="param-desc">从 SCL 上升沿（SCL 变高）到 SDA 上升沿（STOP 事件）之间的最小时间。在此期间 SDA 必须保持低电平，确保所有设备都能在 SDA 上升前看到 SCL 是高的，从而正确识别 STOP 条件而不是普通数据位。</div>
+    </div>
+    <div class="param-card timing">
+      <div class="param-name">tBUF</div>
+      <div class="param-full">Bus Free Time（重申）</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≥ 4.7 µs</span>
+        <span class="param-val fm">FM: ≥ 1.3 µs</span>
+        <span class="param-val fmplus">FM+: ≥ 0.5 µs</span>
+      </div>
+      <div class="param-desc">STOP 完成（SDA 完全变高）到下一次 START 发起之间必须等待的最小时间。这段时间给了总线上的所有从设备恢复到空闲状态的机会，防止通信混叠。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== REPEATED START ===================== -->
+<div id="repstart" class="section">
+  <div class="section-title">重复 START（Repeated START） <span class="badge">Sr</span></div>
+  <div class="section-desc">重复 START（Sr）允许主机在不释放总线的情况下，直接发起新的通信。常用于先写寄存器地址，再读取数据的场景（如读 I2C 传感器寄存器）。</div>
+
+  <div class="diagram-box">
+    <h3>// 写地址 → 写寄存器 → 重复START → 读数据 的完整时序</h3>
+    <svg width="1100" height="280" viewBox="0 0 1100 280">
+      <defs>
+        <marker id="rs1" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#d2a8ff"/></marker>
+        <marker id="rs1r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse"><path d="M0,0 L0,7 L7,3.5 z" fill="#d2a8ff"/></marker>
+        <marker id="rs2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L0,7 L7,3.5 z" fill="#f78166"/></marker>
+        <marker id="rs2r" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto-start-reverse"><path d="M0,0 L0,7 L7,3.5 z" fill="#f78166"/></marker>
+      </defs>
+
+      <!-- Phase backgrounds -->
+      <rect x="40" y="10" width="80" height="210" rx="4" fill="rgba(248,81,73,0.06)" stroke="rgba(248,81,73,0.2)" stroke-width="0.5"/>
+      <rect x="120" y="10" width="180" height="210" rx="4" fill="rgba(88,166,255,0.04)" stroke="rgba(88,166,255,0.1)" stroke-width="0.5"/>
+      <rect x="300" y="10" width="50" height="210" rx="4" fill="rgba(210,168,255,0.07)" stroke="rgba(210,168,255,0.2)" stroke-width="0.5"/>
+      <rect x="350" y="10" width="180" height="210" rx="4" fill="rgba(63,185,80,0.04)" stroke="rgba(63,185,80,0.1)" stroke-width="0.5"/>
+      <rect x="530" y="10" width="50" height="210" rx="4" fill="rgba(210,168,255,0.07)" stroke="rgba(210,168,255,0.2)" stroke-width="0.5"/>
+      <rect x="580" y="10" width="80" height="210" rx="4" fill="rgba(248,81,73,0.06)" stroke="rgba(248,81,73,0.2)" stroke-width="0.5"/>
+      <rect x="660" y="10" width="180" height="210" rx="4" fill="rgba(255,166,87,0.04)" stroke="rgba(255,166,87,0.1)" stroke-width="0.5"/>
+      <rect x="840" y="10" width="50" height="210" rx="4" fill="rgba(210,168,255,0.07)" stroke="rgba(210,168,255,0.2)" stroke-width="0.5"/>
+      <rect x="890" y="10" width="180" height="210" rx="4" fill="rgba(63,185,80,0.04)" stroke="rgba(63,185,80,0.1)" stroke-width="0.5"/>
+
+      <!-- Region labels -->
+      <text x="80" y="27" text-anchor="middle" fill="#f85149" font-size="10" font-weight="bold">S</text>
+      <text x="210" y="27" text-anchor="middle" fill="#58a6ff" font-size="10">ADDR+W ACK</text>
+      <text x="325" y="27" text-anchor="middle" fill="#d2a8ff" font-size="10">A</text>
+      <text x="440" y="27" text-anchor="middle" fill="#3fb950" font-size="10">REG_ADDR ACK</text>
+      <text x="555" y="27" text-anchor="middle" fill="#d2a8ff" font-size="10">A</text>
+      <text x="620" y="27" text-anchor="middle" fill="#f85149" font-size="10" font-weight="bold">Sr</text>
+      <text x="750" y="27" text-anchor="middle" fill="#ffa657" font-size="10">ADDR+R ACK</text>
+      <text x="865" y="27" text-anchor="middle" fill="#d2a8ff" font-size="10">A</text>
+      <text x="980" y="27" text-anchor="middle" fill="#3fb950" font-size="10">DATA NAK/P</text>
+
+      <!-- ref lines -->
+      <line x1="40" y1="60" x2="1090" y2="60" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="40" y1="105" x2="1090" y2="105" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="40" y1="155" x2="1090" y2="155" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+      <line x1="40" y1="200" x2="1090" y2="200" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+      <text x="10" y="67" fill="#58a6ff" font-size="12" font-weight="bold">SCL</text>
+      <text x="10" y="162" fill="#3fb950" font-size="12" font-weight="bold">SDA</text>
+
+      <!-- SCL: Simple clock pattern with START and Repeated START -->
+      <!-- S (START) phase: SCL HIGH -->
+      <polyline points="40,60 120,60" stroke="#58a6ff" stroke-width="2" fill="none"/>
+      <!-- SCL falls after START -->
+      <polyline points="120,60 130,105" stroke="#58a6ff" stroke-width="2" fill="none"/>
+
+      <!-- Address byte clocks (8+1 ACK = 9 pulses, simplified as blocks) -->
+      <!-- A simpler representation: draw the envelope -->
+      <polyline points="130,105 140,60 180,60 188,105 200,105 208,60 240,60 248,105 260,105 268,60 300,60 308,105 320,105" stroke="#58a6ff" stroke-width="2" fill="none"/>
+      <!-- ACK -->
+      <polyline points="320,105 328,60 348,60 356,105 366,105" stroke="#58a6ff" stroke-width="2" fill="none"/>
+
+      <!-- Register address byte (simplified) -->
+      <polyline points="366,105 374,60 414,60 422,105 434,105 442,60 482,60 490,105 502,105 510,60 528,60 536,105 546,105" stroke="#58a6ff" stroke-width="2" fill="none"/>
+      <!-- ACK -->
+      <polyline points="546,105 554,60 572,60 580,105 590,105" stroke="#58a6ff" stroke-width="2" fill="none"/>
+
+      <!-- Sr: SCL rises for repeated START -->
+      <polyline points="590,105 600,60 660,60" stroke="#58a6ff" stroke-width="2" fill="none"/>
+      <!-- SCL falls after Sr hold time -->
+      <polyline points="660,60 670,105" stroke="#58a6ff" stroke-width="2" fill="none"/>
+
+      <!-- Read address + data bytes (simplified) -->
+      <polyline points="670,105 678,60 720,60 728,105 740,105 748,60 790,60 798,105 810,105 818,60 840,60 848,105 858,105" stroke="#58a6ff" stroke-width="2" fill="none"/>
+      <polyline points="858,105 866,60 886,60 894,105 900,105" stroke="#58a6ff" stroke-width="2" fill="none"/>
+      <polyline points="900,105 908,60 950,60 958,105 970,105 978,60 1018,60 1026,105 1038,105 1046,60 1080,60 1088,105" stroke="#58a6ff" stroke-width="2" fill="none"/>
+
+      <!-- SDA waveform -->
+      <!-- Idle HIGH -->
+      <polyline points="40,155 68,155" stroke="#3fb950" stroke-width="2" fill="none"/>
+      <!-- START fall -->
+      <polyline points="68,155 80,200" stroke="#3fb950" stroke-width="2" fill="none"/>
+      <!-- LOW after start -->
+      <polyline points="80,200 130,200" stroke="#3fb950" stroke-width="2" fill="none"/>
+
+      <!-- Address bits (alternating, generic) -->
+      <polyline points="130,200 145,155 185,155 193,200 205,200 213,155 245,155 253,200 265,200 273,155 300,155 310,200 320,200" stroke="#3fb950" stroke-width="2" fill="none"/>
+      <!-- ACK pulled LOW -->
+      <polyline points="320,200 358,200 366,200" stroke="#d2a8ff" stroke-width="2" fill="none"/>
+      <polyline points="366,200 372,155" stroke="#3fb950" stroke-width="2" fill="none"/>
+
+      <!-- Register address bits -->
+      <polyline points="372,155 380,200 420,200 428,155 468,155 476,200 510,200 518,155 546,155" stroke="#3fb950" stroke-width="2" fill="none"/>
+      <!-- ACK -->
+      <polyline points="546,200 580,200 588,155" stroke="#d2a8ff" stroke-width="2" fill="none"/>
+      <polyline points="546,155 548,200" stroke="#3fb950" stroke-width="2" fill="none"/>
+
+      <!-- Sr: SDA HIGH then falls (same as START) -->
+      <polyline points="588,155 608,155" stroke="#3fb950" stroke-width="2" fill="none"/>
+      <text x="620" y="175" text-anchor="middle" fill="#f85149" font-size="10">SDA↓</text>
+      <polyline points="620,155 640,200" stroke="#3fb950" stroke-width="2" fill="none"/>
+      <polyline points="640,200 670,200" stroke="#3fb950" stroke-width="2" fill="none"/>
+
+      <!-- Read addr bits + ACK + data bits -->
+      <polyline points="670,200 678,155 718,155 726,200 738,200 746,155 786,155 794,200 806,200 814,155 840,155 848,200 858,200" stroke="#ffa657" stroke-width="2" fill="none"/>
+      <polyline points="858,200 866,155 886,155 892,200 900,200" stroke="#d2a8ff" stroke-width="2" fill="none"/>
+      <!-- Data FROM slave -->
+      <polyline points="900,155 910,200 950,200 958,155 990,155 1000,200 1040,200 1048,155 1080,155" stroke="#3fb950" stroke-width="2" fill="none" stroke-dasharray="6,3" opacity="0.6"/>
+
+      <!-- Key annotation: tSU;STA for repeated START -->
+      <line x1="546" y1="232" x2="608" y2="232" stroke="#f78166" stroke-width="1.5" marker-end="url(#rs2)" marker-start="url(#rs2r)"/>
+      <line x1="546" y1="155" x2="546" y2="236" stroke="rgba(247,129,102,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <line x1="608" y1="155" x2="608" y2="236" stroke="rgba(247,129,102,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <text x="577" y="248" text-anchor="middle" fill="#f78166" font-size="10.5" font-family="JetBrains Mono">tSU;STA</text>
+      <text x="577" y="260" text-anchor="middle" fill="#8b949e" font-size="9.5">重复START建立时间</text>
+
+      <!-- tHD;STA for Sr -->
+      <line x1="640" y1="232" x2="670" y2="232" stroke="#f78166" stroke-width="1.5" marker-end="url(#rs2)" marker-start="url(#rs2r)"/>
+      <line x1="640" y1="200" x2="640" y2="236" stroke="rgba(247,129,102,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <line x1="670" y1="105" x2="670" y2="236" stroke="rgba(247,129,102,0.4)" stroke-width="1" stroke-dasharray="3,4"/>
+      <text x="655" y="248" text-anchor="middle" fill="#f78166" font-size="10.5" font-family="JetBrains Mono">tHD;STA</text>
+
+      <!-- Data direction indicator -->
+      <text x="840" y="50" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10">← 主机发送 →</text>
+      <text x="980" y="50" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10">← 从机发送 →</text>
+
+      <!-- Legend for colored SDA -->
+      <rect x="400" y="248" width="12" height="4" rx="1" fill="#3fb950"/>
+      <text x="416" y="254" fill="#8b949e" font-size="10">主机发</text>
+      <rect x="460" y="248" width="12" height="4" rx="1" fill="#ffa657"/>
+      <text x="476" y="254" fill="#8b949e" font-size="10">主机发(读模式)</text>
+      <rect x="550" y="248" width="12" height="4" rx="1" fill="#d2a8ff"/>
+      <text x="566" y="254" fill="#8b949e" font-size="10">从机(ACK)</text>
+    </svg>
+  </div>
+
+  <div class="param-grid">
+    <div class="param-card setup">
+      <div class="param-name">tSU;STA</div>
+      <div class="param-full">Setup Time for Repeated START</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≥ 4.7 µs</span>
+        <span class="param-val fm">FM: ≥ 0.6 µs</span>
+        <span class="param-val fmplus">FM+: ≥ 0.26 µs</span>
+      </div>
+      <div class="param-desc">从上一次 ACK 之后（SCL 低时 SDA 变高）到重复 START 的 SDA 下降沿之间，SCL 最后一次高电平的建立时间。必须给足时间，确保总线上所有设备都识别到"总线正在切换状态"而不是数据位。</div>
+    </div>
+    <div class="param-card hold">
+      <div class="param-name">tHD;STA（Sr）</div>
+      <div class="param-full">Hold Time for Repeated START</div>
+      <div class="param-vals">
+        <span class="param-val sm">SM: ≥ 4.0 µs</span>
+        <span class="param-val fm">FM: ≥ 0.6 µs</span>
+        <span class="param-val fmplus">FM+: ≥ 0.26 µs</span>
+      </div>
+      <div class="param-desc">从重复 START 的 SDA 下降沿（Sr 事件）到 SCL 下降沿之间的保持时间，与普通 START 的 tHD;STA 值相同。之所以单独标注 Sr，是因为重复 START 不需要 tBUF，可直接"插入"到通信流中。</div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>💡 重复 START 最典型的使用场景（读寄存器）：</strong><br>
+    ① 发 START + 设备地址（写模式）→ ACK<br>
+    ② 发目标寄存器地址 → ACK<br>
+    ③ 发 <strong>重复 START（Sr）</strong> + 设备地址（读模式）→ ACK<br>
+    ④ 从机发数据 → 主机 ACK → ... → 主机 NAK + STOP<br><br>
+    使用 Sr 而不是 STOP+START 的好处：<strong>不释放总线控制权</strong>，防止其他主机（多主机系统中）在中间抢占总线，保证寄存器地址和读操作的原子性。
+  </div>
+</div>
+
+<!-- ===================== PARAMS ===================== -->
+<div id="params" class="section">
+  <div class="section-title">完整参数速查表 <span class="badge">NXP UM10204 Rev.7</span></div>
+  <div class="section-desc">以下为 I2C 规范中所有关键时序参数，数值来源于 NXP UM10204。SM = 标准模式 100kHz，FM = 快速模式 400kHz，FM+ = 快速模式增强 1MHz。</div>
+
+  <div class="diagram-box" style="overflow-x:auto">
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>参数符号</th>
+          <th>英文全名</th>
+          <th>中文释义</th>
+          <th><span class="tag tag-sm">SM</span> 100kHz</th>
+          <th><span class="tag tag-fm">FM</span> 400kHz</th>
+          <th><span class="tag tag-fmp">FM+</span> 1MHz</th>
+          <th>关键说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="mono" style="color:#d2a8ff">fSCL</span></td>
+          <td>SCL Clock Frequency</td>
+          <td>SCL 时钟频率</td>
+          <td>0–100 kHz</td>
+          <td>0–400 kHz</td>
+          <td>0–1 MHz</td>
+          <td>最大时钟速度</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#d2a8ff">tHD;STA</span></td>
+          <td>Hold Time for START</td>
+          <td>START 保持时间</td>
+          <td>≥ 4.0 µs</td>
+          <td>≥ 0.6 µs</td>
+          <td>≥ 0.26 µs</td>
+          <td>SDA↓ 到 SCL↓ 的最小间隔</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#d2a8ff">tLOW</span></td>
+          <td>LOW Period of SCL Clock</td>
+          <td>SCL 低电平时间</td>
+          <td>≥ 4.7 µs</td>
+          <td>≥ 1.3 µs</td>
+          <td>≥ 0.5 µs</td>
+          <td>SDA 变化的时间窗口</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#d2a8ff">tHIGH</span></td>
+          <td>HIGH Period of SCL Clock</td>
+          <td>SCL 高电平时间</td>
+          <td>≥ 4.0 µs</td>
+          <td>≥ 0.6 µs</td>
+          <td>≥ 0.26 µs</td>
+          <td>数据有效采样窗口</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#d2a8ff">tSU;STA</span></td>
+          <td>Setup Time for Repeated START</td>
+          <td>重复 START 建立时间</td>
+          <td>≥ 4.7 µs</td>
+          <td>≥ 0.6 µs</td>
+          <td>≥ 0.26 µs</td>
+          <td>Sr 之前 SCL 高电平需持续</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#ffa657">tHD;DAT</span></td>
+          <td>Data Hold Time</td>
+          <td>数据保持时间</td>
+          <td>0 ~ 3.45 µs</td>
+          <td>0 ~ 0.9 µs</td>
+          <td>0 ns ~ —</td>
+          <td>⚠️ 有上限！防止误触 START/STOP</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#3fb950">tSU;DAT</span></td>
+          <td>Data Setup Time</td>
+          <td>数据建立时间</td>
+          <td>≥ 250 ns</td>
+          <td>≥ 100 ns</td>
+          <td>≥ 50 ns</td>
+          <td>SDA 稳定到 SCL↑ 的最小间隔</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#f78166">tSU;STO</span></td>
+          <td>Setup Time for STOP</td>
+          <td>STOP 建立时间</td>
+          <td>≥ 4.0 µs</td>
+          <td>≥ 0.6 µs</td>
+          <td>≥ 0.26 µs</td>
+          <td>SCL↑ 到 SDA↑ 的最小间隔</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#ffa657">tr</span></td>
+          <td>Rise Time of SDA and SCL</td>
+          <td>上升时间</td>
+          <td>≤ 1000 ns</td>
+          <td>≤ 300 ns</td>
+          <td>≤ 120 ns</td>
+          <td>由 Rp×Cb 决定，过慢→减小Rp</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#ffa657">tf</span></td>
+          <td>Fall Time of SDA and SCL</td>
+          <td>下降时间</td>
+          <td>≤ 300 ns</td>
+          <td>≤ 300 ns</td>
+          <td>≤ 120 ns</td>
+          <td>由驱动器灌电流能力决定</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#d2a8ff">tBUF</span></td>
+          <td>Bus Free Time</td>
+          <td>总线空闲时间</td>
+          <td>≥ 4.7 µs</td>
+          <td>≥ 1.3 µs</td>
+          <td>≥ 0.5 µs</td>
+          <td>STOP 后到 START 前的间隔</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#8b949e">tSP</span></td>
+          <td>Spike Pulse Width (filter)</td>
+          <td>噪声滤波脉宽</td>
+          <td>≤ 50 ns</td>
+          <td>≤ 50 ns</td>
+          <td>≤ 50 ns</td>
+          <td>短于此的脉冲被滤波器忽略</td>
+        </tr>
+        <tr>
+          <td><span class="mono" style="color:#8b949e">Cb</span></td>
+          <td>Bus Capacitance</td>
+          <td>总线电容</td>
+          <td>≤ 400 pF</td>
+          <td>≤ 400 pF</td>
+          <td>≤ 550 pF</td>
+          <td>影响 tr，限制总线长度</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="explain-grid">
+    <div class="explain-card">
+      <h4><div class="dot dot-acc"></div> 上拉电阻计算</h4>
+      <p>上拉电阻 Rp 选值需同时满足最大和最小约束：<br><br>
+      <code>Rp(min) = (VCC - VOL) / IOL</code><br>
+      确保驱动器能将信号拉低至 VOL 以下。<br><br>
+      <code>Rp(max) = tr / (0.8473 × Cb)</code><br>
+      确保 RC 上升沿快到满足 tr 要求。<br><br>
+      实际工程：SM 用 <code>4.7kΩ</code>，FM 用 <code>1~2.2kΩ</code>。</p>
+    </div>
+    <div class="explain-card">
+      <h4><div class="dot dot-time"></div> 调试检查清单</h4>
+      <p>
+      <strong style="color:#fff">① 示波器看 tr</strong>：过慢 → 减小上拉电阻<br>
+      <strong style="color:#fff">② 看 tHIGH 期间 SDA 是否稳定</strong>：抖动 → 电容太大或PCB走线太长<br>
+      <strong style="color:#fff">③ 确认 ACK 时刻 SDA 是否被拉低</strong>：未拉低 → NAK，地址错误<br>
+      <strong style="color:#fff">④ 时钟拉伸</strong>：SCL 低电平异常长 → 从机正在拉伸<br>
+      <strong style="color:#fff">⑤ 总线死锁</strong>：SDA 卡死 LOW → 需发 9 个时钟脉冲解锁
+      </p>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
