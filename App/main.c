@@ -15,7 +15,6 @@
 #include "components.h"
 #include "elog_user_config.h"
 // #include "time_manager.h"
-#include <inttypes.h>
 /* EasyLogger */
 #include "elog.h"
 #include "elog_user_config.h"

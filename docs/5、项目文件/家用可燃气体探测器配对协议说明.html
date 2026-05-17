@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家用可燃气体报警器 · 配对操作与协议说明</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ---------- Reset & Base ---------- */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+  body {
+    font-family: "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    color: #1c1f26;
+    background:
+      radial-gradient(ellipse at top, rgba(181, 72, 24, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom, rgba(30, 77, 107, 0.04) 0%, transparent 50%),
+      #fbf8f3;
+    background-attachment: fixed;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ---------- Layout ---------- */
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 64px 32px 96px;
+  }
+
+  @media (max-width: 768px) {
+    .wrap { padding: 32px 20px 64px; }
+    body { font-size: 14px; }
+  }
+
+  /* ---------- Header ---------- */
+  .doc-header {
+    border-bottom: 1px solid rgba(28, 31, 38, 0.12);
+    padding-bottom: 32px;
+    margin-bottom: 48px;
+    position: relative;
+  }
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #b54818;
+    font-weight: 500;
+    margin-bottom: 16px;
+  }
+  .doc-title {
+    font-family: "Fraunces", "PingFang SC", serif;
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: #1c1f26;
+    margin-bottom: 12px;
+  }
+  .doc-subtitle {
+    font-size: 16px;
+    color: #5a6271;
+    font-weight: 400;
+    max-width: 640px;
+  }
+  .doc-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 24px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: #7a8294;
+  }
+  .doc-meta span strong {
+    color: #1c1f26;
+    font-weight: 500;
+    margin-left: 6px;
+  }
+
+  /* ---------- TOC ---------- */
+  .toc {
+    background: #ffffff;
+    border: 1px solid rgba(28, 31, 38, 0.08);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 56px;
+    box-shadow: 0 1px 3px rgba(28, 31, 38, 0.03);
+  }
+  .toc-title {
+    font-family: "Fraunces", serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #5a6271;
+    margin-bottom: 16px;
+  }
+  .toc ol {
+    list-style: none;
+    counter-reset: toc;
+  }
+  .toc > ol > li {
+    counter-increment: toc;
+    margin-bottom: 10px;
+  }
+  .toc > ol > li::before {
+    content: counter(toc, decimal-leading-zero);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: #b54818;
+    margin-right: 12px;
+    font-weight: 500;
+  }
+  .toc a {
+    color: #1c1f26;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+  .toc a:hover { color: #b54818; }
+  .toc ul {
+    list-style: none;
+    margin-top: 8px;
+    margin-left: 32px;
+  }
+  .toc ul li {
+    padding: 4px 0;
+    font-size: 13.5px;
+  }
+  .toc ul a {
+    color: #5a6271;
+    font-weight: 400;
+  }
+
+  /* ---------- Sections ---------- */
+  section {
+    margin-bottom: 64px;
+    scroll-margin-top: 24px;
+  }
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #1c1f26;
+  }
+  .section-number {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    color: #b54818;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+  .section-title {
+    font-family: "Fraunces", "PingFang SC", serif;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: #1c1f26;
+  }
+
+  h3.sub-title {
+    font-family: "Fraunces", "PingFang SC", serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1c1f26;
+    margin: 40px 0 16px;
+    padding-left: 14px;
+    border-left: 3px solid #b54818;
+  }
+  h4.sub-sub-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1c1f26;
+    margin: 24px 0 12px;
+    text-transform: none;
+  }
+
+  /* ---------- Paragraphs ---------- */
+  p { margin-bottom: 12px; color: #2a2e38; }
+
+  /* ---------- Step Cards ---------- */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+  }
+  .step {
+    background: #ffffff;
+    border: 1px solid rgba(28, 31, 38, 0.08);
+    border-radius: 12px;
+    padding: 24px 28px;
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 24px;
+    box-shadow: 0 1px 2px rgba(28, 31, 38, 0.02);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .step:hover {
+    border-color: rgba(181, 72, 24, 0.25);
+    box-shadow: 0 4px 16px rgba(28, 31, 38, 0.05);
+  }
+  .step-num {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #1c1f26;
+    color: #fbf8f3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Fraunces", serif;
+    font-size: 20px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .step-content h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1c1f26;
+    margin-bottom: 10px;
+  }
+  .step-content ul {
+    list-style: none;
+    padding-left: 0;
+  }
+  .step-content li {
+    position: relative;
+    padding-left: 18px;
+    margin-bottom: 6px;
+    color: #3a3f4b;
+    line-height: 1.7;
+  }
+  .step-content li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 12px;
+    width: 6px;
+    height: 1px;
+    background: #b54818;
+  }
+
+  @media (max-width: 640px) {
+    .step {
+      grid-template-columns: 1fr;
+      gap: 12px;
+      padding: 20px;
+    }
+  }
+
+  /* ---------- Code & Hex ---------- */
+  code, .mono {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.92em;
+  }
+  .inline-code {
+    background: rgba(28, 31, 38, 0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    color: #1c1f26;
+  }
+  .code-block {
+    background: #1c1f26;
+    color: #e8e3d8;
+    padding: 20px 24px;
+    border-radius: 10px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    overflow-x: auto;
+    margin: 16px 0;
+    line-height: 1.65;
+  }
+  .code-block .comment { color: #7a8294; }
+  .code-block .label { color: #d4a373; }
+  .code-block .value { color: #a8c5d6; }
+
+  /* ---------- Tables ---------- */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 16px 0 24px;
+    border-radius: 10px;
+    border: 1px solid rgba(28, 31, 38, 0.08);
+    background: #ffffff;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  th {
+    background: #f5f1e8;
+    color: #1c1f26;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 2px solid rgba(28, 31, 38, 0.12);
+    white-space: nowrap;
+  }
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid rgba(28, 31, 38, 0.06);
+    color: #2a2e38;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: rgba(251, 248, 243, 0.5); }
+  td.mono, .hex { font-family: "JetBrains Mono", monospace; font-size: 12.5px; color: #1c1f26; }
+  td .hex-strong { color: #b54818; font-weight: 600; }
+
+  /* ---------- Direction Badges ---------- */
+  .dir-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 12px 0 8px;
+  }
+  .dir-down {
+    background: rgba(30, 77, 107, 0.08);
+    color: #1e4d6b;
+    border: 1px solid rgba(30, 77, 107, 0.2);
+  }
+  .dir-up {
+    background: rgba(45, 106, 79, 0.08);
+    color: #2d6a4f;
+    border: 1px solid rgba(45, 106, 79, 0.2);
+  }
+  .dir-badge::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* ---------- Callouts ---------- */
+  .callout {
+    background: #ffffff;
+    border-left: 3px solid #c9821b;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    box-shadow: 0 1px 2px rgba(28, 31, 38, 0.03);
+  }
+  .callout.info { border-left-color: #1e4d6b; }
+  .callout.warn { border-left-color: #b54818; background: rgba(181, 72, 24, 0.03); }
+  .callout-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #c9821b;
+    margin-bottom: 6px;
+  }
+  .callout.info .callout-label { color: #1e4d6b; }
+  .callout.warn .callout-label { color: #b54818; }
+  .callout p { margin-bottom: 6px; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ---------- Byte Breakdown ---------- */
+  .byte-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin: 16px 0;
+  }
+  .byte-cell {
+    background: #ffffff;
+    border: 1px solid rgba(28, 31, 38, 0.1);
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: left;
+  }
+  .byte-cell .bytes {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: #b54818;
+    font-weight: 600;
+    word-break: break-all;
+    line-height: 1.4;
+  }
+  .byte-cell .label {
+    font-size: 11px;
+    color: #5a6271;
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  /* ---------- Frame Diagram ---------- */
+  .frame-diagram {
+    background: #ffffff;
+    border: 1px solid rgba(28, 31, 38, 0.1);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+  .frame-row {
+    display: flex;
+    gap: 4px;
+    min-width: 760px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+  }
+  .frame-block {
+    flex: 1;
+    background: #f5f1e8;
+    border: 1px solid rgba(28, 31, 38, 0.1);
+    border-radius: 6px;
+    padding: 12px 8px;
+    text-align: center;
+    min-height: 84px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .frame-block.start { background: rgba(30, 77, 107, 0.1); border-color: rgba(30, 77, 107, 0.3); }
+  .frame-block.data { background: rgba(181, 72, 24, 0.08); border-color: rgba(181, 72, 24, 0.25); flex: 3; }
+  .frame-block.end { background: rgba(45, 106, 79, 0.1); border-color: rgba(45, 106, 79, 0.3); }
+  .frame-block .fname { font-weight: 600; color: #1c1f26; font-size: 11.5px; margin-bottom: 4px; line-height: 1.3; }
+  .frame-block .fbytes { color: #b54818; font-weight: 600; font-size: 12px; }
+  .frame-block .fhex { color: #5a6271; font-size: 10.5px; margin-top: 2px; }
+
+  /* ---------- Topology Diagram ---------- */
+  .topology {
+    background: #ffffff;
+    border: 1px solid rgba(28, 31, 38, 0.08);
+    border-radius: 12px;
+    padding: 32px 24px;
+    margin: 24px 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .topo-node {
+    text-align: center;
+    flex: 1;
+    min-width: 120px;
+  }
+  .topo-node .icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #f5f1e8;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    border: 2px solid rgba(28, 31, 38, 0.1);
+  }
+  .topo-node.bridge .icon {
+    background: rgba(181, 72, 24, 0.08);
+    border-color: rgba(181, 72, 24, 0.3);
+  }
+  .topo-node .name {
+    font-weight: 600;
+    color: #1c1f26;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .topo-node .sub {
+    font-size: 12px;
+    color: #7a8294;
+    font-family: "JetBrains Mono", monospace;
+  }
+  .topo-link {
+    text-align: center;
+    flex: 0 0 auto;
+    color: #5a6271;
+    font-size: 11px;
+    font-family: "JetBrains Mono", monospace;
+    letter-spacing: 0.05em;
+  }
+  .topo-link .arrow {
+    font-size: 20px;
+    color: #b54818;
+    line-height: 1;
+  }
+  .topo-link .proto {
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* ---------- Format Tag ---------- */
+  .fmt-tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  .fmt-hex { background: rgba(181, 72, 24, 0.1); color: #b54818; }
+  .fmt-ascii { background: rgba(30, 77, 107, 0.1); color: #1e4d6b; }
+  .fmt-bcd { background: rgba(45, 106, 79, 0.1); color: #2d6a4f; }
+
+  /* ---------- Footer ---------- */
+  .doc-footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid rgba(28, 31, 38, 0.1);
+    text-align: center;
+    color: #7a8294;
+    font-size: 12px;
+    font-family: "JetBrains Mono", monospace;
+    letter-spacing: 0.05em;
+  }
+
+  /* ---------- Print ---------- */
+  @media print {
+    body { background: white; }
+    .wrap { padding: 0; }
+    .step, .table-wrap, .callout, .frame-diagram { break-inside: avoid; box-shadow: none; }
+    section { break-inside: avoid-page; }
+  }
+
+  /* ---------- Highlight ---------- */
+  mark {
+    background: rgba(201, 130, 27, 0.18);
+    color: #1c1f26;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="doc-header">
+    <div class="eyebrow">PROTOCOL SPECIFICATION · BLE / NEARLINK</div>
+    <h1 class="doc-title">家用可燃气体报警器<br>配对操作与协议说明</h1>
+    <p class="doc-subtitle">APP 通过配对工装（BLE↔星闪翻译机）将可燃气体报警器与目标表具 / 电磁阀控制器进行绑定的完整流程及通信协议规范。</p>
+    <div class="doc-meta">
+      <span>VERSION<strong>260415</strong></span>
+      <span>SCOPE<strong>报警器 · 工装 · APP</strong></span>
+      <span>LINKS<strong>BLE + NearLink (星闪)</strong></span>
+    </div>
+  </header>
+
+  <!-- ==================== TOC ==================== -->
+  <nav class="toc">
+    <div class="toc-title">目录 · Contents</div>
+    <ol>
+      <li><a href="#overview">系统拓扑与通信模型</a></li>
+      <li><a href="#pairing">配对流程（7 步 + 附加功能）</a>
+        <ul>
+          <li><a href="#step-1">步骤 1：报警器进入配对模式</a></li>
+          <li><a href="#step-2">步骤 2：APP 连接配对工装</a></li>
+          <li><a href="#step-3">步骤 3：APP 触发扫描 &amp; 报警器配对</a></li>
+          <li><a href="#step-4">步骤 4：APP 下发配对目标信息</a></li>
+          <li><a href="#step-5">步骤 5：工装 → 配对信息 → 报警器</a></li>
+          <li><a href="#step-6">步骤 6：报警器执行配对</a></li>
+          <li><a href="#step-7">步骤 7：工装超时断开</a></li>
+          <li><a href="#extra">附加功能</a></li>
+        </ul>
+      </li>
+      <li><a href="#protocol">APP 配置工具与协议规范</a>
+        <ul>
+          <li><a href="#frame">2.1 帧格式</a></li>
+          <li><a href="#key">2.2 通信密钥（AES 初始密钥推导）</a></li>
+          <li><a href="#data">2.3 数据内容（标识与控制码）</a></li>
+          <li><a href="#bb01">　 2.3.1 0xBB01 触发通讯启动及测试</a></li>
+          <li><a href="#bb02">　 2.3.2 0xBB02 设置 / 读取配对信息</a></li>
+          <li><a href="#aaff">　 2.3.3 0xAAFF 设备列表同步信息</a></li>
+        </ul>
+      </li>
+    </ol>
+  </nav>
+
+  <!-- ==================== OVERVIEW ==================== -->
+  <section id="overview">
+    <div class="section-header">
+      <span class="section-number">01</span>
+      <h2 class="section-title">系统拓扑与通信模型</h2>
+    </div>
+
+    <p>整套配对系统包含三类节点。APP 与工装之间通过 <strong>蓝牙（BLE）</strong> 通信；工装与报警器之间通过 <strong>星闪（NearLink）</strong> 通信。工装本质上是一台 BLE↔NearLink 协议转换器（翻译机），将 APP 下发的指令透传给报警器，并把报警器的回复透传回 APP。</p>
+
+    <div class="topology" aria-label="系统拓扑">
+      <div class="topo-node">
+        <div class="icon">📱</div>
+        <div class="name">APP</div>
+        <div class="sub">主控 · 配置工具</div>
+      </div>
+      <div class="topo-link">
+        <div class="arrow">⇌</div>
+        <div class="proto">BLE</div>
+      </div>
+      <div class="topo-node bridge">
+        <div class="icon">🔁</div>
+        <div class="name">配对工装</div>
+        <div class="sub">BLE ↔ NearLink<br>透传 / 翻译</div>
+      </div>
+      <div class="topo-link">
+        <div class="arrow">⇌</div>
+        <div class="proto">NearLink</div>
+      </div>
+      <div class="topo-node">
+        <div class="icon">🛡️</div>
+        <div class="name">报警器</div>
+        <div class="sub">从机模式</div>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-label">读图提示</div>
+      <p>本文中协议方向以 APP 视角描述：<strong>下行</strong> = APP→工装→报警器；<strong>上行</strong> = 报警器→工装→APP。控制码遵循约定：<code class="inline-code">0x01</code> 读 / <code class="inline-code">0x04</code> 写为下行，<code class="inline-code">0x81</code> / <code class="inline-code">0x84</code> 为对应上行响应（高位置 1）。</p>
+    </div>
+  </section>
+
+  <!-- ==================== PAIRING ==================== -->
+  <section id="pairing">
+    <div class="section-header">
+      <span class="section-number">02</span>
+      <h2 class="section-title">配对流程</h2>
+    </div>
+
+    <div class="steps">
+
+      <!-- Step 1 -->
+      <div class="step" id="step-1">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>报警器进入配对模式</h4>
+          <ul>
+            <li>出厂默认即为<strong>配对模式</strong>（开启一个通道，处于从机状态）。</li>
+            <li>配对模式下广播数据通过 AT 指令配置：</li>
+          </ul>
+          <div class="code-block">
+<span class="comment"># AT 指令格式</span>
+AT+ANNCDATA=<span class="value">FF18</span><span class="label">FFFFFF</span><span class="value">313131313032323630343135313233343536373839</span>
+          </div>
+          <p style="font-size: 13.5px; color: #5a6271; margin-top: 8px;">按字段拆解如下：</p>
+          <div class="byte-grid">
+            <div class="byte-cell">
+              <div class="bytes">FF</div>
+              <div class="label">类型 (1 B)</div>
+            </div>
+            <div class="byte-cell">
+              <div class="bytes">18</div>
+              <div class="label">长度 = 0x18 = 24 B</div>
+            </div>
+            <div class="byte-cell">
+              <div class="bytes">FF FF</div>
+              <div class="label">厂商 ID（2 B）</div>
+            </div>
+            <div class="byte-cell">
+              <div class="bytes">FF</div>
+              <div class="label">状态字（1 B，预留）</div>
+            </div>
+            <div class="byte-cell">
+              <div class="bytes">31 31 31 31 30 32 32 36 30 34 31 35 31 32 33 34 35 36 37 38 39</div>
+              <div class="label">广播名 21 B (ASCII)<br>→ "<strong style="color:#1c1f26">111102260415123456789</strong>"</div>
+            </div>
+          </div>
+
+          <div class="table-wrap" style="margin-top:16px">
+            <table>
+              <thead>
+                <tr><th>类型</th><th>长度</th><th>数据内容</th><th>数据内容说明</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mono">0xFF</td>
+                  <td class="mono">0x18</td>
+                  <td class="mono" style="word-break:break-all">0xFFFFFF313131313032323630343135313233343536373839</td>
+                  <td>2 字节厂商 ID：<code class="inline-code">0xFFFF</code><br>1 字节状态字：预留<br>21 字节广播名：<code class="inline-code">111102260415123456789</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step" id="step-2">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>APP 连接配对工装</h4>
+          <ul>
+            <li>APP 通过蓝牙搜索并连接配对工装。</li>
+            <li>连接成功后，APP 显示 <mark>【工装连接成功】</mark>，工装上对应的指示灯点亮表示连接已建立。</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step" id="step-3">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>APP 触发扫描 &amp; 报警器配对</h4>
+          <ul>
+            <li>APP 扫描报警器外壳上的 27 位编码，<strong>去除后 6 位</strong>得到 21 位编码号。</li>
+            <li>点击 <mark>【启动连接】</mark>，APP 通过 BLE 向工装发送 <code class="inline-code">触发通讯启动及测试 BB01</code> 协议帧（详见 <a href="#bb01">§2.3.1</a>）。</li>
+            <li>工装开始扫描星闪广播包，过滤出名称以<strong>公司代码（待定）</strong>开头的报警器。</li>
+            <li>工装连接到匹配的报警器，将指令通过星闪透传过去；报警器回复后，工装再把响应透传回 APP。</li>
+            <li>APP 显示：<mark>【报警器名称：xxxxxxxxxxxxxxxxxxxxx】</mark>（21 位编码）</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step" id="step-4">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>APP 下发配对目标信息</h4>
+          <ul>
+            <li>APP 扫描待配对的<strong>表具</strong>或<strong>电磁阀控制器</strong>条形码/二维码，获取对应编号。</li>
+            <li>点击 <mark>【下发配对信息】</mark>，APP 通过蓝牙向工装发送 <code class="inline-code">设置配对信息 BB02</code> 协议帧（详见 <a href="#bb02">§2.3.2</a>）。</li>
+            <li>收到工装回复后，APP 显示：<mark>【表号：xxxxxxxxxxxx】</mark> 【电磁阀控制器：xxxxxxxxxx】。</li>
+          </ul>
+          <div class="callout warn">
+            <div class="callout-label">校验要求</div>
+            <p>APP 需<strong>判断回显数据是否与下发数据相符</strong>，不相符的字段需以红色高亮显示，提示操作员复核。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5 -->
+      <div class="step" id="step-5">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h4>工装 → 配对信息 → 报警器</h4>
+          <ul>
+            <li>配对工装通过<strong>星闪</strong>将配对信息透传给报警器。</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Step 6 -->
+      <div class="step" id="step-6">
+        <div class="step-num">6</div>
+        <div class="step-content">
+          <h4>报警器执行配对</h4>
+          <ul>
+            <li>报警器与表具建立一次通信，记录表具的 <strong>MAC 地址 + 编号</strong> 并绑定存储。</li>
+            <li>报警器与电磁阀控制器建立一次通信，记录其 <strong>MAC 地址 + 编号</strong> 并绑定存储。</li>
+            <li>配对完成后，<strong>蜂鸣器长鸣 1 秒</strong>，绿色运行灯<strong>常亮</strong>。</li>
+          </ul>
+          <div class="callout">
+            <div class="callout-label">重配对行为</div>
+            <p>若报警器已配对过，再次收到配对指令时<strong>清除原绑定信息</strong>并按新数据重新绑定。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 7 -->
+      <div class="step" id="step-7">
+        <div class="step-num">7</div>
+        <div class="step-content">
+          <h4>工装超时断开</h4>
+          <ul>
+            <li>工装配对完成后，<strong>无操作超时 5 分钟</strong>主动断开蓝牙连接。</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Extra -->
+      <div class="step" id="extra" style="border-color: rgba(201, 130, 27, 0.3); background: rgba(255, 252, 245, 0.6);">
+        <div class="step-num" style="background: #c9821b;">+</div>
+        <div class="step-content">
+          <h4>附加功能</h4>
+          <ul style="margin-bottom: 12px;">
+            <li><strong>读取已配对设备连接状态</strong></li>
+          </ul>
+          <p style="font-size: 13.5px; color: #3a3f4b; margin-left: 18px; margin-bottom: 14px;">先长按报警器进入从机模式 → APP 点击 <mark>【读取配对信息】</mark> → 触发工装连接报警器 → 工装转发 <code class="inline-code">读取配对信息 BB02</code>（控制码 0x01） → 报警器回复 → 工装同步给 APP → APP 显示绑定列表与连接状态。</p>
+
+          <ul style="margin-bottom: 8px;">
+            <li><strong>工装扫描设备列表同步</strong></li>
+          </ul>
+          <p style="font-size: 13.5px; color: #3a3f4b; margin-left: 18px;">APP 点击 <mark>【扫描设备】</mark> → 工装开启<strong>10 秒</strong>扫描，把扫到的设备列表（通过 <code class="inline-code">0xAAFF</code>）发送给 APP 显示。</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== PROTOCOL ==================== -->
+  <section id="protocol">
+    <div class="section-header">
+      <span class="section-number">03</span>
+      <h2 class="section-title">APP 配置工具与协议规范</h2>
+    </div>
+
+    <!-- 2.1 Frame Format -->
+    <h3 class="sub-title" id="frame">2.1　帧格式</h3>
+
+    <p>所有 APP↔工装↔报警器的通信均采用统一的应用层帧格式。整帧结构如下（从左到右按字节顺序传输）：</p>
+
+    <div class="frame-diagram" aria-label="帧结构示意">
+      <div class="frame-row">
+        <div class="frame-block start"><div class="fname">前导码</div><div class="fbytes">3 B</div><div class="fhex">FE×3</div></div>
+        <div class="frame-block start"><div class="fname">起始符1</div><div class="fbytes">1 B</div><div class="fhex">0x68</div></div>
+        <div class="frame-block"><div class="fname">目标地址</div><div class="fbytes">6 B</div><div class="fhex">默认 FF×6</div></div>
+        <div class="frame-block start"><div class="fname">起始符2</div><div class="fbytes">1 B</div><div class="fhex">0x68</div></div>
+        <div class="frame-block"><div class="fname">控制码</div><div class="fbytes">1 B</div><div class="fhex">读/写/响应</div></div>
+        <div class="frame-block"><div class="fname">数据域长度</div><div class="fbytes">2 B</div><div class="fhex">小端</div></div>
+        <div class="frame-block data"><div class="fname">数据域</div><div class="fbytes">L B</div><div class="fhex">见下表</div></div>
+        <div class="frame-block"><div class="fname">校验码</div><div class="fbytes">1 B</div><div class="fhex">字节累加和</div></div>
+        <div class="frame-block end"><div class="fname">结束符</div><div class="fbytes">1 B</div><div class="fhex">0x16</div></div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th colspan="2">字段</th>
+            <th>长度</th>
+            <th>格式</th>
+            <th>备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="2"><strong>前导码</strong></td><td class="mono">3 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td><code class="inline-code">0xFE</code>，一般发送 3 个</td></tr>
+          <tr><td colspan="2"><strong>起始符 1</strong></td><td class="mono">1 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td><code class="inline-code">0x68</code></td></tr>
+          <tr><td colspan="2"><strong>目标地址</strong></td><td class="mono">6 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>默认全 <code class="inline-code">0xFF</code></td></tr>
+          <tr><td colspan="2"><strong>起始符 2</strong></td><td class="mono">1 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td><code class="inline-code">0x68</code></td></tr>
+          <tr><td colspan="2"><strong>控制码</strong></td><td class="mono">1 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>读数据：<code class="inline-code">0x01</code>　写数据：<code class="inline-code">0x04</code><br>对应响应：<code class="inline-code">0x81</code> / <code class="inline-code">0x84</code></td></tr>
+          <tr><td colspan="2"><strong>数据域长度</strong></td><td class="mono">2 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td><strong>低字节在前</strong>（小端），如 <code class="inline-code">0x10 0x00</code> 表示 16 字节</td></tr>
+          <tr><td rowspan="5"><strong>数据域</strong></td><td>时间</td><td class="mono">6 B</td><td><span class="fmt-tag fmt-bcd">BCD</span></td><td>年-月-日-时-分-秒</td></tr>
+          <tr><td>设备类型</td><td class="mono">1 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>默认 <code class="inline-code">0x02</code></td></tr>
+          <tr><td>数据标识</td><td class="mono">2 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>如 <code class="inline-code">0xBB01</code> / <code class="inline-code">0xBB02</code> / <code class="inline-code">0xAAFF</code></td></tr>
+          <tr><td>帧序号</td><td class="mono">1 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td><code class="inline-code">0x00</code> 表示无多帧</td></tr>
+          <tr><td>数据内容</td><td class="mono">L − 10 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td><strong>加密</strong>，内容根据数据标识定义</td></tr>
+          <tr><td colspan="2"><strong>校验码</strong></td><td class="mono">1 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>从起始符 1 开始到数据域末尾，<strong>按字节累加和</strong>（取低 8 位）</td></tr>
+          <tr><td colspan="2"><strong>结束符</strong></td><td class="mono">1 B</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td><code class="inline-code">0x16</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info">
+      <div class="callout-label">字段说明</div>
+      <p>数据域固定开销为 <strong>10 字节</strong>（时间 6 + 设备类型 1 + 数据标识 2 + 帧序号 1），因此真正承载有效负载的「数据内容」长度 = <strong>数据域长度 − 10</strong>。数据域长度字段本身指<strong>整个</strong>数据域（含上述 10 字节）的总长度。</p>
+    </div>
+
+    <!-- 2.2 Key -->
+    <h3 class="sub-title" id="key">2.2　通信密钥（AES 初始密钥推导）</h3>
+
+    <p>表具和报警器默认使用<strong>配对过程中生成的密钥</strong>进行后续通信。<strong>初始密钥</strong>的推导方式为：</p>
+
+    <div class="callout">
+      <div class="callout-label">推导规则</div>
+      <p style="font-weight:500;">初始密钥 = AES-128 ( 明文 = 表号ASCII, 密钥 = 表号ASCII )</p>
+      <p style="font-size:13.5px; color:#5a6271; margin-top:6px;">表号以 ASCII 形式参与运算。长度不足 16 字节时在<strong>尾部补 <code class="inline-code">0x00</code></strong>；超过 16 字节时<strong>取后 16 位</strong>。</p>
+    </div>
+
+    <h4 class="sub-sub-title">推导示例</h4>
+
+    <div class="byte-grid">
+      <div class="byte-cell">
+        <div class="bytes" style="color:#1e4d6b;">WX1234567890</div>
+        <div class="label">广播名称（12 字符 ASCII）</div>
+      </div>
+      <div class="byte-cell">
+        <div class="bytes">31 32 33 34 35 36 37 38 39 30 00 00 00 00 00 00</div>
+        <div class="label">加密数据（16 B，尾部补 0）</div>
+      </div>
+      <div class="byte-cell">
+        <div class="bytes">31 32 33 34 35 36 37 38 39 30 00 00 00 00 00 00</div>
+        <div class="label">加密密钥（16 B，同上）</div>
+      </div>
+      <div class="byte-cell" style="background:rgba(181,72,24,0.05); border-color:rgba(181,72,24,0.3);">
+        <div class="bytes" style="color:#b54818;">D1 28 EC 1B F9 C7 57 DF 6A C3 54 04 5B C7 3D F9</div>
+        <div class="label" style="color:#1c1f26;"><strong>初始密钥（AES 输出 16 B）</strong></div>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <div class="callout-label">注意</div>
+      <p>示例中广播名称是 <code class="inline-code">WX1234567890</code>，但「加密数据/密钥」却是 <code class="inline-code">"1234567890"</code> 对应的 ASCII（即只取了数字部分，去掉了前缀 <code class="inline-code">WX</code>）。这与「表号 ASCII」的字面描述不一致，<strong>实施时需与对接方确认</strong>：是否应只取广播名中的数字段作为表号？</p>
+    </div>
+
+    <!-- 2.3 Data Content -->
+    <h3 class="sub-title" id="data">2.3　数据内容（标识与控制码）</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>数据标识</th><th>方向</th><th>说明</th><th>详见</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="mono"><span class="hex-strong">0xBB01</span></td><td>APP → 工装 → 报警器</td><td>触发通讯启动及测试</td><td><a href="#bb01">§2.3.1</a></td></tr>
+          <tr><td class="mono"><span class="hex-strong">0xBB02</span></td><td>APP → 工装 → 报警器</td><td>设置 / 读取配对信息</td><td><a href="#bb02">§2.3.2</a></td></tr>
+          <tr><td class="mono"><span class="hex-strong">0xAAFF</span></td><td>配对工装 → APP</td><td>设备列表同步信息</td><td><a href="#aaff">§2.3.3</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 2.3.1 BB01 -->
+    <h4 class="sub-sub-title" id="bb01">2.3.1　0xBB01 触发通讯启动及测试</h4>
+
+    <div style="display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:#5a6271; margin-bottom:12px;">
+      <span>数据加密：<strong style="color:#b54818;">是</strong></span>
+      <span>数据标识：<code class="inline-code">0xBB01</code></span>
+    </div>
+
+    <div class="dir-badge dir-down">下行　APP → 工装 → 报警器　控制码 0x04</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>数据内容</th><th>字节数</th><th>格式</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>扫描配对报警器</td>
+            <td class="mono">21</td>
+            <td><span class="fmt-tag fmt-ascii">ASCII</span></td>
+            <td><code class="inline-code">0x31313131...3839</code><br>表示 "<strong style="color:#b54818;">111102260415123456789</strong>"</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dir-badge dir-up">上行　报警器 → 工装 → APP　控制码 0x84</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>数据内容</th><th>字节数</th><th>格式</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>返回连接的报警器编号</td>
+            <td class="mono">21</td>
+            <td><span class="fmt-tag fmt-ascii">ASCII</span></td>
+            <td><code class="inline-code">0x31313131...3839</code><br>表示 "<strong style="color:#b54818;">111102260415123456789</strong>"</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 2.3.2 BB02 -->
+    <h4 class="sub-sub-title" id="bb02">2.3.2　0xBB02 设置 / 读取配对信息</h4>
+
+    <div style="display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:#5a6271; margin-bottom:12px;">
+      <span>数据加密：<strong style="color:#b54818;">是</strong></span>
+      <span>数据标识：<code class="inline-code">0xBB02</code></span>
+    </div>
+
+    <p style="margin:8px 0 4px; font-weight:500; color:#1c1f26;">A · 设置配对信息</p>
+
+    <div class="dir-badge dir-down">下行　APP → 工装 → 报警器　控制码 0x04</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>数据内容</th><th>字节数</th><th>格式</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>设置配对 / 删除设备总数 N</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td><code class="inline-code">0</code>：无配对/删除设备<br><code class="inline-code">N</code>：设备数量。当 N=0 时<strong>后续字节不传</strong>。</td></tr>
+          <tr><td>设备类型 #1</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>见「设备类型」定义</td></tr>
+          <tr><td>设备 #1 编号</td><td class="mono">24</td><td><span class="fmt-tag fmt-ascii">ASCII</span></td><td>不足位尾部补 <code class="inline-code">0x00</code>；<br>下发全 <code class="inline-code">0x00</code> 表示<strong>删除</strong>对应设备</td></tr>
+          <tr style="color:#7a8294;"><td colspan="4" style="text-align:center; font-style:italic;">⋯ (按 N 重复) ⋯</td></tr>
+          <tr><td>设备类型 #N</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>见「设备类型」定义</td></tr>
+          <tr><td>设备 #N 编号</td><td class="mono">24</td><td><span class="fmt-tag fmt-ascii">ASCII</span></td><td>不足位尾部补 <code class="inline-code">0x00</code>；下发全 0 表示删除</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dir-badge dir-up">上行　报警器 → 工装 → APP　控制码 0x84</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>数据内容</th><th>字节数</th><th>格式</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>设置结果</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td><code class="inline-code">0x00</code>：成功　<code class="inline-code">0x01</code>：失败</td></tr>
+          <tr><td>设备总数 N</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>N=0 时后续字节不传</td></tr>
+          <tr><td>设备类型 #1</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>见「设备类型」定义</td></tr>
+          <tr><td>设备 #1 编号</td><td class="mono">24</td><td><span class="fmt-tag fmt-ascii">ASCII</span></td><td>不足位尾部补 <code class="inline-code">0x00</code></td></tr>
+          <tr style="color:#7a8294;"><td colspan="4" style="text-align:center; font-style:italic;">⋯ (按 N 重复) ⋯</td></tr>
+          <tr><td>设备类型 #N</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>见「设备类型」定义</td></tr>
+          <tr><td>设备 #N 编号</td><td class="mono">24</td><td><span class="fmt-tag fmt-ascii">ASCII</span></td><td>不足位尾部补 <code class="inline-code">0x00</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin:24px 0 4px; font-weight:500; color:#1c1f26;">B · 读取配对信息</p>
+
+    <div class="dir-badge dir-down">下行　APP → 工装 → 报警器　控制码 0x01</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>数据内容</th><th>字节数</th><th>格式</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>预留</td><td class="mono">10</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dir-badge dir-up">上行　报警器 → 工装 → APP　控制码 0x81</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>数据内容</th><th>字节数</th><th>格式</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>设备总数 N</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>N=0 时后续字节不传</td></tr>
+          <tr><td>设备类型 #1</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>见「设备类型」定义</td></tr>
+          <tr><td>设备 #1 连接状态</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td><code class="inline-code">0x00</code>：未连接　<code class="inline-code">0x01</code>：已连接</td></tr>
+          <tr><td>设备 #1 编号</td><td class="mono">24</td><td><span class="fmt-tag fmt-ascii">ASCII</span></td><td>不足位尾部补 <code class="inline-code">0x00</code></td></tr>
+          <tr><td>设备 #1 地址</td><td class="mono">6</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>设备 MAC 地址</td></tr>
+          <tr style="color:#7a8294;"><td colspan="4" style="text-align:center; font-style:italic;">⋯ (按 N 重复，每组 32 B) ⋯</td></tr>
+          <tr><td>设备类型 #N</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>见「设备类型」定义</td></tr>
+          <tr><td>设备 #N 连接状态</td><td class="mono">1</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>同上</td></tr>
+          <tr><td>设备 #N 编号</td><td class="mono">24</td><td><span class="fmt-tag fmt-ascii">ASCII</span></td><td>不足位尾部补 <code class="inline-code">0x00</code></td></tr>
+          <tr><td>设备 #N 地址</td><td class="mono">6</td><td><span class="fmt-tag fmt-hex">HEX</span></td><td>设备 MAC 地址</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 2.3.3 AAFF -->
+    <h4 class="sub-sub-title" id="aaff">2.3.3　0xAAFF 设备列表同步信息</h4>
+
+    <div style="display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:#5a6271; margin-bottom:12px;">
+      <span>数据加密：<strong style="color:#2d6a4f;">否</strong></span>
+      <span>数据标识：<code class="inline-code">0xAAFF</code></span>
+    </div>
+
+    <div class="dir-badge dir-down">下行　APP → 配对工装　控制码 0x01</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>数据内容</th><th>字节数</th><th>格式</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>无</td><td>—</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dir-badge dir-up">上行　配对工装 → APP　控制码 0x81</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>数据内容</th><th>结构</th><th>字节数</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>设备信息</td>
+            <td>信号强度 + MAC 地址 + 扫描数据</td>
+            <td class="mono">1 + 6 + n</td>
+            <td>
+              <code class="inline-code">1 HEX</code>：星闪信号强度<br>
+              <code class="inline-code">6 HEX</code>：设备 MAC 地址<br>
+              <code class="inline-code">n HEX</code>：扫描到的原始广播数据
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info" style="margin-top:24px;">
+      <div class="callout-label">原文校订说明</div>
+      <p>原文档中存在以下不一致，本版本已做整理：</p>
+      <p style="font-size:13px;">①「一、配对流程」之后直接跳到「三、APP配置工具与相关协议」，缺失「二」 → 本版本重排为 <strong>02 配对流程 / 03 协议规范</strong>。</p>
+      <p style="font-size:13px;">② 原 3.3 从 3.3.2 直接跳到 3.3.4 → 本版本重排为 <strong>2.3.1 / 2.3.2 / 2.3.3</strong>。</p>
+      <p style="font-size:13px;">③ 「设备类型」定义在原文中只有指针引用，<strong>未给出具体取值表</strong>（如 0x01 表具 / 0x02 电磁阀控制器 等），建议补全。</p>
+    </div>
+
+  </section>
+
+  <footer class="doc-footer">
+    Internal Spec · 家用可燃气体报警器配对协议 · v260415
+  </footer>
+
+</div>
+</body>
+</html>
