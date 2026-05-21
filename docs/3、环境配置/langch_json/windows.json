@@ -1,0 +1,76 @@
+{
+  // Windows 平台 launch.json 模板。
+  // 用法：把本文件内容拷贝到 .vscode/launch.json（该文件已 .gitignore，各机器本地维护）。
+  // 若你的 GNU Arm Embedded Toolchain 安装路径不同，请同步修改下方 armToolchainPath / gdbPath。
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FM33LE0XX Debug (External Server)",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/BT_PassThroughFT.elf",
+      "request": "launch",
+      "type": "cortex-debug",
+      "runToEntryPoint": "main",
+      "servertype": "external",
+      "gdbTarget": "localhost:3333",
+      "armToolchainPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin",
+      "gdbPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe",
+      "preLaunchTask": "Build: CMake Default (Windows)",
+      "showDevDebugOutput": "raw",
+      "svdFile": "${workspaceFolder}/VscodeGcc/FM33LE0XX.SVD",
+      "swoConfig": {
+        "enabled": false
+      },
+      "overrideLaunchCommands": [
+        "monitor reset halt",
+        "load",
+        "monitor reset halt"
+      ],
+      "postLaunchCommands": [
+        "monitor reset halt"
+      ],
+      "overrideRestartCommands": [
+        "monitor reset halt",
+        "load"
+      ]
+    },
+    {
+      "name": "FM33LE0XX Attach",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/BT_PassThroughFT.elf",
+      "request": "attach",
+      "type": "cortex-debug",
+      "servertype": "external",
+      "gdbTarget": "localhost:3333",
+      "armToolchainPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin",
+      "gdbPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe",
+      "showDevDebugOutput": "raw",
+      "svdFile": "${workspaceFolder}/VscodeGcc/FM33LE0XX.SVD",
+      "overrideAttachCommands": [
+        "monitor reset halt"
+      ]
+    },
+    {
+      "name": "Cortex Debug (PyOCD RTT)",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/BT_PassThroughFT.elf",
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "pyocd",
+      "targetId": "FM33LE015",
+      "armToolchainPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin",
+      "gdbPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe",
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "decoders": [
+          {
+            "port": 0,
+            "type": "console",
+            "label": "RTT Channel 0"
+          }
+        ]
+      }
+    }
+  ]
+}

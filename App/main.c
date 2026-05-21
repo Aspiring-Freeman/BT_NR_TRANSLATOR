@@ -16,6 +16,7 @@
 #include "elog_user_config.h"
 // #include "time_manager.h"
 /* EasyLogger */
+#include "SEGGER_RTT.h"
 #include "elog.h"
 #include "elog_user_config.h"
 
@@ -94,6 +95,8 @@ static void System_Init(void) {
   FL_Init();
   MF_Clock_Init();
   MF_SystemClock_Config();
+  // 初始化RTT，方便调试，后续即使没用到也没关系
+  SEGGER_RTT_Init();
 }
 
 /*============================================================================
@@ -255,6 +258,7 @@ static void Loop_NormalTest(void) {
     if (debug_print_time == 0) {
       debug_print_time = DEBUG_PRINT_TIME;
       log_i("正常测试模式运行中...");
+      SEGGER_RTT_WriteString(0, "Hello RTT from CMSIS-DAP!\r\n");
     }
 #ifdef ENABLE_WATCHDOG
     FL_IWDT_ReloadCounter(IWDT);

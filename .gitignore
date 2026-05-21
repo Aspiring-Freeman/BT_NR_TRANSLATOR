@@ -10,6 +10,8 @@ build_fast/
 
 # ===== IDE / 工具 =====
 #.vscode/settings.json  不屏蔽，因为里面包含了 clangd 的配置，屏蔽后会导致代码提示失效
+# launch.json 含平台相关的工具链路径，各机器本地维护，参考 docs/3、环境配置/langch_json/
+#.vscode/launch.json
 
 # ===== 平台相关配置（不入库，各机器自行维护，参考 docs/环境配置/ 目录）=====
 .clangd

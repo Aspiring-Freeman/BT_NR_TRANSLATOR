@@ -1,97 +1,114 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "FM33LE0XX Debug (External Server) - Linux",
-            "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/BT_PassThroughFT.elf",
-            "request": "launch",
-            "type": "cortex-debug",
-            "runToEntryPoint": "main",
-            "servertype": "external",
-            "gdbTarget": "localhost:3333",
-            "armToolchainPath": "/usr/bin",
-            "gdbPath": "/usr/bin/gdb-multiarch",
-            "preLaunchTask": "Build: CMake Default (Linux)",
-            "showDevDebugOutput": "raw",
-            "svdFile": "${workspaceFolder}/VscodeGcc/FM33LE0XX.SVD",
-            "swoConfig": {
-                "enabled": false
-            },
-            "overrideLaunchCommands": [
-                "monitor reset halt",
-                "load",
-                "monitor reset halt"
-            ],
-            "postLaunchCommands": [
-                "monitor reset halt"
-            ],
-            "overrideRestartCommands": [
-                "monitor reset halt",
-                "load"
-            ]
-        },
-        {
-            "name": "FM33LE0XX Attach - Linux",
-            "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/BT_PassThroughFT.elf",
-            "request": "attach",
-            "type": "cortex-debug",
-            "servertype": "external",
-            "gdbTarget": "localhost:3333",
-            "armToolchainPath": "/usr/bin",
-            "gdbPath": "/usr/bin/gdb-multiarch",
-            "showDevDebugOutput": "raw",
-            "svdFile": "${workspaceFolder}/VscodeGcc/FM33LE0XX.SVD",
-            "overrideAttachCommands": [
-                "monitor reset halt"
-            ]
-        },
-        {
-            "name": "FM33LE0XX Debug (External Server) - Windows",
-            "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/BT_PassThroughFT.elf",
-            "request": "launch",
-            "type": "cortex-debug",
-            "runToEntryPoint": "main",
-            "servertype": "external",
-            "gdbTarget": "localhost:3333",
-            "armToolchainPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin",
-            "gdbPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe",
-            "preLaunchTask": "Build: CMake Default (Windows)",
-            "showDevDebugOutput": "raw",
-            "svdFile": "${workspaceFolder}/VscodeGcc/FM33LE0XX.SVD",
-            "swoConfig": {
-                "enabled": false
-            },
-            "overrideLaunchCommands": [
-                "monitor reset halt",
-                "load",
-                "monitor reset halt"
-            ],
-            "postLaunchCommands": [
-                "monitor reset halt"
-            ],
-            "overrideRestartCommands": [
-                "monitor reset halt",
-                "load"
-            ]
-        },
-        {
-            "name": "FM33LE0XX Attach - Windows",
-            "cwd": "${workspaceFolder}",
-            "executable": "${workspaceFolder}/build/BT_PassThroughFT.elf",
-            "request": "attach",
-            "type": "cortex-debug",
-            "servertype": "external",
-            "gdbTarget": "localhost:3333",
-            "armToolchainPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin",
-            "gdbPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe",
-            "showDevDebugOutput": "raw",
-            "svdFile": "${workspaceFolder}/VscodeGcc/FM33LE0XX.SVD",
-            "overrideAttachCommands": [
-                "monitor reset halt"
-            ]
-        }
-    ]
+  // 本文件已加入 .gitignore，由各机器本地维护。
+  // cortex-debug 支持 windows / linux / osx 字段在同一配置中按当前 OS 自动覆盖，
+  // 因此只需保留一份 Launch / Attach 配置即可跨平台 F5。
+  // 各平台默认路径如下，若本机工具链不同，请就地修改对应 OS 段即可。
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // F5 一键工作流：
+      // 1) preLaunchTask 用 pyOCD CLI 完成 build + flash（CLI 路径下 target 识别正确，
+      //    不触发 gdbserver vFlash 的 "Error finishing flash operation"）。
+      // 2) cortex-debug 接着自己启动 pyocd 作为 gdbserver（无需再手动跑 GDB Server 任务）。
+      // 3) GDB attach 上去后只做 monitor reset halt，runToEntryPoint 跑到 main 停下。
+      "name": "FM33LE0XX Debug (External Server)",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/BT_PassThroughFT.elf",
+      "request": "attach",
+      "type": "cortex-debug",
+      "runToEntryPoint": "main",
+      "servertype": "pyocd",
+      "targetId": "fm33le01x",
+      "showDevDebugOutput": "raw",
+      "svdFile": "${workspaceFolder}/VscodeGcc/FM33LE0XX.SVD",
+      "swoConfig": {
+        "enabled": false
+      },
+      "overrideAttachCommands": [
+        "monitor reset halt"
+      ],
+      "overrideRestartCommands": [
+        "monitor reset halt"
+      ],
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "decoders": [
+          {
+            "port": 0,
+            "type": "console",
+            "label": "RTT Ch0"
+          }
+        ]
+      },
+      "serverArgs": [
+        "--pack",
+        "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack",
+        "--frequency",
+        "1000000"
+      ],
+      "windows": {
+        "armToolchainPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin",
+        "gdbPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe",
+        "serverpath": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
+        "preLaunchTask": "PyOCD: Flash (Windows)"
+      },
+      "linux": {
+        "armToolchainPath": "/usr/bin",
+        "gdbPath": "/usr/bin/gdb-multiarch",
+        "serverpath": "/home/${env:USER}/Program/PyOCD/venv_new/bin/pyocd",
+        "preLaunchTask": "PyOCD: Flash (Linux)"
+      }
+    },
+    {
+      "name": "FM33LE0XX Attach",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/BT_PassThroughFT.elf",
+      "request": "attach",
+      "type": "cortex-debug",
+      "servertype": "external",
+      "gdbTarget": "localhost:3333",
+      "showDevDebugOutput": "raw",
+      "svdFile": "${workspaceFolder}/VscodeGcc/FM33LE0XX.SVD",
+      "overrideAttachCommands": [
+        "monitor reset halt"
+      ],
+      "windows": {
+        "armToolchainPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin",
+        "gdbPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe"
+      },
+      "linux": {
+        "armToolchainPath": "/usr/bin",
+        "gdbPath": "/usr/bin/gdb-multiarch"
+      }
+    },
+    {
+      "name": "Cortex Debug (PyOCD RTT)",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/BT_PassThroughFT.elf",
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "pyocd",
+      "targetId": "FM33LE015",
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "decoders": [
+          {
+            "port": 0,
+            "type": "console",
+            "label": "RTT Channel 0"
+          }
+        ]
+      },
+      "windows": {
+        "armToolchainPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin",
+        "gdbPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe"
+      },
+      "linux": {
+        "armToolchainPath": "/usr/bin",
+        "gdbPath": "/usr/bin/gdb-multiarch"
+      }
+    }
+  ]
 }

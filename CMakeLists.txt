@@ -113,6 +113,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${COMPONENTS_DIR}/Protocol
     ${COMPONENTS_DIR}/Protocol/PC
     ${COMPONENTS_DIR}/Protocol/App/BT_Passthrough
+
+    # RTT库
+    ${COMPONENTS_DIR}/RTT/RTT
+    ${COMPONENTS_DIR}/RTT/Config
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
@@ -219,6 +223,11 @@ set(FLASHDB_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Components/FlashDB/test_stats.c
 )
 
+set(RTT_SOURCES
+    ${COMPONENTS_DIR}/RTT/RTT/SEGGER_RTT.c
+    ${COMPONENTS_DIR}/RTT/RTT/SEGGER_RTT_printf.c
+)
+
 target_sources(${PROJECT_NAME} PRIVATE
     ${CMSIS_SOURCES}
     ${FM33_DRIVER_SOURCES}
@@ -230,6 +239,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     ${FLASHDB_SOURCES}
     ${UTILITY_SOURCES}
     ${EASYLOGGER_SOURCES}
+    ${RTT_SOURCES}
 )
 
 add_dependencies(${PROJECT_NAME} generate_build_info)
