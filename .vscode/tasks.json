@@ -104,572 +104,11 @@
             }
         },
         {
-            "label": "🚀 PyOCD: High-Speed Flash (Windows)",
+            "label": "� PyOCD: RTT Viewer (Windows)",
             "type": "shell",
             "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
             "args": [
-                "flash",
-                "${workspaceFolder}/build/BT_PassThroughFT.elf",
-                "--target",
-                "fm33le01x",
-                "--frequency",
-                "8000000",
-                "--pack",
-                "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack",
-                "--no-wait"
-            ],
-            "problemMatcher": [],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "dependsOn": "⚡ Fast Incremental Build (Windows)",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "PyOCD: Erase (Linux)",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "-c",
-                "if [ \"$USER\" = \"lay\" ]; then PYOCD_PATH=\"/home/lay/Program/PyOCD/venv_new/bin/pyocd\"; elif [ \"$USER\" = \"noah\" ]; then PYOCD_PATH=\"/home/noah/Program/pyOCD/venv/bin/pyocd\"; else PYOCD_PATH=\"/home/$USER/Program/PyOCD/venv_new/bin/pyocd\"; fi; $PYOCD_PATH erase --target fm33le01x --chip --pack ${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
-            ],
-            "problemMatcher": [],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "PyOCD: Erase (Windows)",
-            "type": "shell",
-            "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
-            "args": [
-                "erase",
-                "--target",
-                "fm33le01x",
-                "--chip",
-                "--pack",
-                "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
-            ],
-            "problemMatcher": [],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        // ==================== Bootloader 模式烧录任务 ====================
-        //
-        // Bootloader + APP 烧录流程:
-        // 1. 先执行 "PyOCD: Erase" (Ctrl+Alt+E) 全片擦除
-        // 2. 烧录 Bootloader (需要单独的 Bootloader 项目)
-        // 3. 执行 "🔧 PyOCD: Flash APP (No Erase)" 烧录 APP (不擦除 Bootloader)
-        //
-        {
-            "label": "🔧 PyOCD: Flash APP (No Erase) (Linux)",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "-c",
-                "if [ \"$USER\" = \"lay\" ]; then PYOCD_PATH=\"/home/lay/Program/PyOCD/venv_new/bin/pyocd\"; elif [ \"$USER\" = \"noah\" ]; then PYOCD_PATH=\"/home/noah/Program/pyOCD/venv/bin/pyocd\"; else PYOCD_PATH=\"/home/$USER/Program/PyOCD/venv_new/bin/pyocd\"; fi; $PYOCD_PATH flash ${workspaceFolder}/build/BT_PassThroughFT.elf --target fm33le01x --frequency 1000000 --pack ${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack -e sector"
-            ],
-            "problemMatcher": [],
-            "group": "build",
-            "dependsOn": "Build: CMake Default (Linux)",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "🔧 PyOCD: Flash APP (No Erase) (Windows)",
-            "type": "shell",
-            "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
-            "args": [
-                "flash",
-                "${workspaceFolder}/build/BT_PassThroughFT.elf",
-                "--target",
-                "fm33le01x",
-                "--frequency",
-                "5000000",
-                "--pack",
-                "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack",
-                "-e",
-                "sector"
-            ],
-            "problemMatcher": [],
-            "group": "build",
-            "dependsOn": "Build: CMake Default (Windows)",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "🔄 PyOCD: Reset (Windows)",
-            "type": "shell",
-            "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
-            "args": [
-                "reset",
-                "--target",
-                "fm33le01x",
-                "--pack",
-                "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
-            ],
-            "problemMatcher": [],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "🔄 PyOCD: Reset (Linux)",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "-c",
-                "if [ \"$USER\" = \"lay\" ]; then PYOCD_PATH=\"/home/lay/Program/PyOCD/venv_new/bin/pyocd\"; elif [ \"$USER\" = \"noah\" ]; then PYOCD_PATH=\"/home/noah/Program/pyOCD/venv/bin/pyocd\"; else PYOCD_PATH=\"/home/$USER/Program/PyOCD/venv_new/bin/pyocd\"; fi; $PYOCD_PATH reset --target fm33le01x --pack ${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
-            ],
-            "problemMatcher": [],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "PyOCD: Start GDB Server (Linux)",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "-c",
-                "if [ \"$USER\" = \"lay\" ]; then PYOCD_PATH=\"/home/lay/Program/PyOCD/venv_new/bin/pyocd\"; elif [ \"$USER\" = \"noah\" ]; then PYOCD_PATH=\"/home/noah/Program/pyOCD/venv/bin/pyocd\"; else PYOCD_PATH=\"/home/$USER/Program/PyOCD/venv_new/bin/pyocd\"; fi; $PYOCD_PATH gdbserver --target fm33le01x --frequency 1000000 --pack ${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
-            ],
-            "isBackground": true,
-            "problemMatcher": [
-                {
-                    "pattern": [
-                        {
-                            "regexp": ".",
-                            "file": 1,
-                            "location": 2,
-                            "message": 3
-                        }
-                    ],
-                    "background": {
-                        "activeOnStart": true,
-                        "beginsPattern": ".",
-                        "endsPattern": "GDB server started on port"
-                    }
-                }
-            ],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "dedicated"
-            }
-        },
-        {
-            "label": "PyOCD: Start GDB Server (Windows)",
-            "type": "shell",
-            "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
-            "args": [
-                "gdbserver",
-                "--target",
-                "fm33le01x",
-                "--frequency",
-                "1000000",
-                "--pack",
-                "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
-            ],
-            "isBackground": true,
-            "problemMatcher": [
-                {
-                    "pattern": [
-                        {
-                            "regexp": ".",
-                            "file": 1,
-                            "location": 2,
-                            "message": 3
-                        }
-                    ],
-                    "background": {
-                        "activeOnStart": true,
-                        "beginsPattern": ".",
-                        "endsPattern": "GDB server started on port"
-                    }
-                }
-            ],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "dedicated"
-            }
-        },
-        {
-            "label": "Build: Clean (Linux)",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build",
-                "build",
-                "--target",
-                "clean"
-            ],
-            "group": "build",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Build: Clean (Windows)",
-            "type": "shell",
-            "command": "cmake.exe",
-            "args": [
-                "--build",
-                "build",
-                "--target",
-                "clean"
-            ],
-            "group": "build",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Build: Configure (Linux)",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "-S",
-                ".",
-                "-B",
-                "build",
-                "-DCMAKE_BUILD_TYPE=Debug"
-            ],
-            "group": "build",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Build: Configure (Windows)",
-            "type": "shell",
-            "command": "cmake.exe",
-            "args": [
-                "-S",
-                ".",
-                "-B",
-                "build",
-                "-DCMAKE_BUILD_TYPE=Debug"
-            ],
-            "group": "build",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Memory Usage Analysis (Linux)",
-            "type": "shell",
-            "command": "arm-none-eabi-size",
-            "args": [
-                "-A",
-                "${workspaceFolder}/build/BT_PassThroughFT.elf"
-            ],
-            "group": "test",
-            "dependsOn": "Build: CMake Default (Linux)",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": true,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "🚀 Fast Build: Configure (Linux)",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "-S",
-                ".",
-                "-B",
-                "build_fast",
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-G",
-                "Ninja"
-            ],
-            "group": "build",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": true,
-                "clear": true
-            },
-            "options": {
-                "env": {
-                    "PATH": "/usr/bin:${env:PATH}"
-                }
-            }
-        },
-        {
-            "label": "🚀 Fast Build: Compile (Linux)",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build",
-                "build_fast",
-                "--parallel"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "problemMatcher": {
-                "base": "$gcc",
-                "fileLocation": [
-                    "relative",
-                    "${workspaceFolder}"
-                ]
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": true,
-                "clear": false
-            },
-            "dependsOn": "🚀 Fast Build: Configure (Linux)",
-            "options": {
-                "env": {
-                    "PATH": "/usr/bin:${env:PATH}"
-                }
-            }
-        },
-        {
-            "label": "⚡ Fast Incremental Build (Linux)",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build",
-                "build_fast",
-                "--parallel"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "problemMatcher": {
-                "base": "$gcc",
-                "fileLocation": [
-                    "relative",
-                    "${workspaceFolder}"
-                ]
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": true,
-                "clear": false
-            },
-            "options": {
-                "env": {
-                    "PATH": "/usr/bin:${env:PATH}"
-                }
-            }
-        },
-        {
-            "label": "🚀 Fast Build + Flash (Linux)",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "-c",
-                "if [ \"$USER\" = \"lay\" ]; then PYOCD_PATH=\"/home/lay/Program/PyOCD/venv_new/bin/pyocd\"; elif [ \"$USER\" = \"noah\" ]; then PYOCD_PATH=\"/home/noah/Program/pyOCD/venv/bin/pyocd\"; else PYOCD_PATH=\"/home/$USER/Program/PyOCD/venv_new/bin/pyocd\"; fi; $PYOCD_PATH flash ${workspaceFolder}/build_fast/BT_PassThroughFT.elf --target fm33le01x --frequency 1000000 --pack ${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
-            ],
-            "problemMatcher": [],
-            "group": "build",
-            "dependsOn": "⚡ Fast Incremental Build (Linux)",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "🧹 Fast Build: Clean (Linux)",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "-c",
-                "if [ -d 'build_fast' ]; then rm -rf 'build_fast'; fi; echo 'Fast build directory cleaned!'"
-            ],
-            "group": "build",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Fast Memory Usage Analysis (Linux)",
-            "type": "shell",
-            "command": "arm-none-eabi-size",
-            "args": [
-                "-A",
-                "${workspaceFolder}/build_fast/BT_PassThroughFT.elf"
-            ],
-            "group": "test",
-            "dependsOn": "⚡ Fast Incremental Build (Linux)",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": true,
-                "panel": "shared"
-            },
-            "options": {
-                "env": {
-                    "PATH": "/usr/bin:${env:PATH}"
-                }
-            }
-        },
-        {
-            "label": "🚀 Fast Build: Configure (Windows)",
-            "type": "shell",
-            "command": "cmake.exe",
-            "args": [
-                "-S",
-                ".",
-                "-B",
-                "build_fast",
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-G",
-                "Ninja"
-            ],
-            "group": "build",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": true,
-                "clear": true
-            }
-        },
-        {
-            "label": "🚀 Fast Build: Compile (Windows)",
-            "type": "shell",
-            "command": "cmake.exe",
-            "args": [
-                "--build",
-                "build_fast",
-                "--parallel"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "problemMatcher": {
-                "base": "$gcc",
-                "fileLocation": [
-                    "relative",
-                    "${workspaceFolder}"
-                ]
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": true,
-                "clear": false
-            },
-            "dependsOn": "🚀 Fast Build: Configure (Windows)"
-        },
-        {
-            "label": "⚡ Fast Incremental Build (Windows)",
-            "type": "shell",
-            "command": "cmake.exe",
-            "args": [
-                "--build",
-                "build_fast",
-                "--parallel"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "problemMatcher": {
-                "base": "$gcc",
-                "fileLocation": [
-                    "relative",
-                    "${workspaceFolder}"
-                ]
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": true,
-                "clear": false
-            }
-        },
-        {
-            "label": "🚀 Fast Build + Flash (Windows)",
-            "type": "shell",
-            "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
-            "args": [
-                "flash",
-                "${workspaceFolder}/build_fast/BT_PassThroughFT.elf",
+                "rtt",
                 "--target",
                 "fm33le01x",
                 "--frequency",
@@ -678,67 +117,649 @@
                 "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
             ],
             "problemMatcher": [],
-            "group": "build",
-            "dependsOn": "⚡ Fast Incremental Build (Windows)",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "🧹 Fast Build: Clean (Windows)",
-            "type": "shell",
-            "command": "powershell.exe",
-            "args": [
-                "-Command",
-                "if (Test-Path 'build_fast') { Remove-Item -Recurse -Force 'build_fast' }; Write-Host 'Fast build directory cleaned!'"
-            ],
-            "group": "build",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Fast Memory Usage Analysis (Windows)",
-            "type": "shell",
-            "command": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-size.exe",
-            "args": [
-                "-A",
-                "${workspaceFolder}/build_fast/BT_PassThroughFT.elf"
-            ],
-            "group": "test",
-            "dependsOn": "⚡ Fast Incremental Build (Windows)",
-            "problemMatcher": [],
+            "isBackground": true,
             "presentation": {
                 "echo": true,
                 "reveal": "always",
                 "focus": true,
-                "panel": "shared"
+                "panel": "dedicated",
+                "clear": true
             }
         },
-        {
-            "label": "Memory Usage Analysis (Windows)",
-            "type": "shell",
-            "command": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-size.exe",
-            "args": [
-                "-A",
-                "${workspaceFolder}/build/BT_PassThroughFT.elf"
-            ],
-            "group": "test",
-            "dependsOn": "Build: CMake Default (Windows)",
-            "problemMatcher": [],
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": true,
-                "panel": "shared"
+        "type": "shell",
+        "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
+        "args": [
+            "flash",
+            "${workspaceFolder}/build/BT_PassThroughFT.elf",
+            "--target",
+            "fm33le01x",
+            "--frequency",
+            "8000000",
+            "--pack",
+            "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack",
+            "--no-wait"
+        ],
+        "problemMatcher": [],
+        "group": {
+            "kind": "build",
+            "isDefault": false
+        },
+        "dependsOn": "⚡ Fast Incremental Build (Windows)",
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "PyOCD: Erase (Linux)",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+            "-c",
+            "if [ \"$USER\" = \"lay\" ]; then PYOCD_PATH=\"/home/lay/Program/PyOCD/venv_new/bin/pyocd\"; elif [ \"$USER\" = \"noah\" ]; then PYOCD_PATH=\"/home/noah/Program/pyOCD/venv/bin/pyocd\"; else PYOCD_PATH=\"/home/$USER/Program/PyOCD/venv_new/bin/pyocd\"; fi; $PYOCD_PATH erase --target fm33le01x --chip --pack ${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
+        ],
+        "problemMatcher": [],
+        "group": "build",
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "PyOCD: Erase (Windows)",
+        "type": "shell",
+        "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
+        "args": [
+            "erase",
+            "--target",
+            "fm33le01x",
+            "--chip",
+            "--pack",
+            "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
+        ],
+        "problemMatcher": [],
+        "group": "build",
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    // ==================== Bootloader 模式烧录任务 ====================
+    //
+    // Bootloader + APP 烧录流程:
+    // 1. 先执行 "PyOCD: Erase" (Ctrl+Alt+E) 全片擦除
+    // 2. 烧录 Bootloader (需要单独的 Bootloader 项目)
+    // 3. 执行 "🔧 PyOCD: Flash APP (No Erase)" 烧录 APP (不擦除 Bootloader)
+    //
+    {
+        "label": "🔧 PyOCD: Flash APP (No Erase) (Linux)",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+            "-c",
+            "if [ \"$USER\" = \"lay\" ]; then PYOCD_PATH=\"/home/lay/Program/PyOCD/venv_new/bin/pyocd\"; elif [ \"$USER\" = \"noah\" ]; then PYOCD_PATH=\"/home/noah/Program/pyOCD/venv/bin/pyocd\"; else PYOCD_PATH=\"/home/$USER/Program/PyOCD/venv_new/bin/pyocd\"; fi; $PYOCD_PATH flash ${workspaceFolder}/build/BT_PassThroughFT.elf --target fm33le01x --frequency 1000000 --pack ${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack -e sector"
+        ],
+        "problemMatcher": [],
+        "group": "build",
+        "dependsOn": "Build: CMake Default (Linux)",
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "🔧 PyOCD: Flash APP (No Erase) (Windows)",
+        "type": "shell",
+        "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
+        "args": [
+            "flash",
+            "${workspaceFolder}/build/BT_PassThroughFT.elf",
+            "--target",
+            "fm33le01x",
+            "--frequency",
+            "5000000",
+            "--pack",
+            "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack",
+            "-e",
+            "sector"
+        ],
+        "problemMatcher": [],
+        "group": "build",
+        "dependsOn": "Build: CMake Default (Windows)",
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "🔄 PyOCD: Reset (Windows)",
+        "type": "shell",
+        "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
+        "args": [
+            "reset",
+            "--target",
+            "fm33le01x",
+            "--pack",
+            "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
+        ],
+        "problemMatcher": [],
+        "group": "build",
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "🔄 PyOCD: Reset (Linux)",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+            "-c",
+            "if [ \"$USER\" = \"lay\" ]; then PYOCD_PATH=\"/home/lay/Program/PyOCD/venv_new/bin/pyocd\"; elif [ \"$USER\" = \"noah\" ]; then PYOCD_PATH=\"/home/noah/Program/pyOCD/venv/bin/pyocd\"; else PYOCD_PATH=\"/home/$USER/Program/PyOCD/venv_new/bin/pyocd\"; fi; $PYOCD_PATH reset --target fm33le01x --pack ${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
+        ],
+        "problemMatcher": [],
+        "group": "build",
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "PyOCD: Start GDB Server (Linux)",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+            "-c",
+            "if [ \"$USER\" = \"lay\" ]; then PYOCD_PATH=\"/home/lay/Program/PyOCD/venv_new/bin/pyocd\"; elif [ \"$USER\" = \"noah\" ]; then PYOCD_PATH=\"/home/noah/Program/pyOCD/venv/bin/pyocd\"; else PYOCD_PATH=\"/home/$USER/Program/PyOCD/venv_new/bin/pyocd\"; fi; $PYOCD_PATH gdbserver --target fm33le01x --frequency 1000000 --pack ${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
+        ],
+        "isBackground": true,
+        "problemMatcher": [
+            {
+                "pattern": [
+                    {
+                        "regexp": ".",
+                        "file": 1,
+                        "location": 2,
+                        "message": 3
+                    }
+                ],
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "GDB server started on port"
+                }
+            }
+        ],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "dedicated"
+        }
+    },
+    {
+        "label": "PyOCD: Start GDB Server (Windows)",
+        "type": "shell",
+        "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
+        "args": [
+            "gdbserver",
+            "--target",
+            "fm33le01x",
+            "--frequency",
+            "1000000",
+            "--pack",
+            "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
+        ],
+        "isBackground": true,
+        "problemMatcher": [
+            {
+                "pattern": [
+                    {
+                        "regexp": ".",
+                        "file": 1,
+                        "location": 2,
+                        "message": 3
+                    }
+                ],
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "GDB server started on port"
+                }
+            }
+        ],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "dedicated"
+        }
+    },
+    {
+        "label": "Build: Clean (Linux)",
+        "type": "shell",
+        "command": "cmake",
+        "args": [
+            "--build",
+            "build",
+            "--target",
+            "clean"
+        ],
+        "group": "build",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "Build: Clean (Windows)",
+        "type": "shell",
+        "command": "cmake.exe",
+        "args": [
+            "--build",
+            "build",
+            "--target",
+            "clean"
+        ],
+        "group": "build",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "Build: Configure (Linux)",
+        "type": "shell",
+        "command": "cmake",
+        "args": [
+            "-S",
+            ".",
+            "-B",
+            "build",
+            "-DCMAKE_BUILD_TYPE=Debug"
+        ],
+        "group": "build",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "Build: Configure (Windows)",
+        "type": "shell",
+        "command": "cmake.exe",
+        "args": [
+            "-S",
+            ".",
+            "-B",
+            "build",
+            "-DCMAKE_BUILD_TYPE=Debug"
+        ],
+        "group": "build",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "Memory Usage Analysis (Linux)",
+        "type": "shell",
+        "command": "arm-none-eabi-size",
+        "args": [
+            "-A",
+            "${workspaceFolder}/build/BT_PassThroughFT.elf"
+        ],
+        "group": "test",
+        "dependsOn": "Build: CMake Default (Linux)",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": true,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "🚀 Fast Build: Configure (Linux)",
+        "type": "shell",
+        "command": "cmake",
+        "args": [
+            "-S",
+            ".",
+            "-B",
+            "build_fast",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-G",
+            "Ninja"
+        ],
+        "group": "build",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared",
+            "showReuseMessage": true,
+            "clear": true
+        },
+        "options": {
+            "env": {
+                "PATH": "/usr/bin:${env:PATH}"
             }
         }
-    ]
+    },
+    {
+        "label": "🚀 Fast Build: Compile (Linux)",
+        "type": "shell",
+        "command": "cmake",
+        "args": [
+            "--build",
+            "build_fast",
+            "--parallel"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": false
+        },
+        "problemMatcher": {
+            "base": "$gcc",
+            "fileLocation": [
+                "relative",
+                "${workspaceFolder}"
+            ]
+        },
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared",
+            "showReuseMessage": true,
+            "clear": false
+        },
+        "dependsOn": "🚀 Fast Build: Configure (Linux)",
+        "options": {
+            "env": {
+                "PATH": "/usr/bin:${env:PATH}"
+            }
+        }
+    },
+    {
+        "label": "⚡ Fast Incremental Build (Linux)",
+        "type": "shell",
+        "command": "cmake",
+        "args": [
+            "--build",
+            "build_fast",
+            "--parallel"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": false
+        },
+        "problemMatcher": {
+            "base": "$gcc",
+            "fileLocation": [
+                "relative",
+                "${workspaceFolder}"
+            ]
+        },
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared",
+            "showReuseMessage": true,
+            "clear": false
+        },
+        "options": {
+            "env": {
+                "PATH": "/usr/bin:${env:PATH}"
+            }
+        }
+    },
+    {
+        "label": "🚀 Fast Build + Flash (Linux)",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+            "-c",
+            "if [ \"$USER\" = \"lay\" ]; then PYOCD_PATH=\"/home/lay/Program/PyOCD/venv_new/bin/pyocd\"; elif [ \"$USER\" = \"noah\" ]; then PYOCD_PATH=\"/home/noah/Program/pyOCD/venv/bin/pyocd\"; else PYOCD_PATH=\"/home/$USER/Program/PyOCD/venv_new/bin/pyocd\"; fi; $PYOCD_PATH flash ${workspaceFolder}/build_fast/BT_PassThroughFT.elf --target fm33le01x --frequency 1000000 --pack ${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
+        ],
+        "problemMatcher": [],
+        "group": "build",
+        "dependsOn": "⚡ Fast Incremental Build (Linux)",
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "🧹 Fast Build: Clean (Linux)",
+        "type": "shell",
+        "command": "bash",
+        "args": [
+            "-c",
+            "if [ -d 'build_fast' ]; then rm -rf 'build_fast'; fi; echo 'Fast build directory cleaned!'"
+        ],
+        "group": "build",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "Fast Memory Usage Analysis (Linux)",
+        "type": "shell",
+        "command": "arm-none-eabi-size",
+        "args": [
+            "-A",
+            "${workspaceFolder}/build_fast/BT_PassThroughFT.elf"
+        ],
+        "group": "test",
+        "dependsOn": "⚡ Fast Incremental Build (Linux)",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": true,
+            "panel": "shared"
+        },
+        "options": {
+            "env": {
+                "PATH": "/usr/bin:${env:PATH}"
+            }
+        }
+    },
+    {
+        "label": "🚀 Fast Build: Configure (Windows)",
+        "type": "shell",
+        "command": "cmake.exe",
+        "args": [
+            "-S",
+            ".",
+            "-B",
+            "build_fast",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-G",
+            "Ninja"
+        ],
+        "group": "build",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared",
+            "showReuseMessage": true,
+            "clear": true
+        }
+    },
+    {
+        "label": "🚀 Fast Build: Compile (Windows)",
+        "type": "shell",
+        "command": "cmake.exe",
+        "args": [
+            "--build",
+            "build_fast",
+            "--parallel"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": false
+        },
+        "problemMatcher": {
+            "base": "$gcc",
+            "fileLocation": [
+                "relative",
+                "${workspaceFolder}"
+            ]
+        },
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared",
+            "showReuseMessage": true,
+            "clear": false
+        },
+        "dependsOn": "🚀 Fast Build: Configure (Windows)"
+    },
+    {
+        "label": "⚡ Fast Incremental Build (Windows)",
+        "type": "shell",
+        "command": "cmake.exe",
+        "args": [
+            "--build",
+            "build_fast",
+            "--parallel"
+        ],
+        "group": {
+            "kind": "build",
+            "isDefault": true
+        },
+        "problemMatcher": {
+            "base": "$gcc",
+            "fileLocation": [
+                "relative",
+                "${workspaceFolder}"
+            ]
+        },
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared",
+            "showReuseMessage": true,
+            "clear": false
+        }
+    },
+    {
+        "label": "🚀 Fast Build + Flash (Windows)",
+        "type": "shell",
+        "command": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
+        "args": [
+            "flash",
+            "${workspaceFolder}/build_fast/BT_PassThroughFT.elf",
+            "--target",
+            "fm33le01x",
+            "--frequency",
+            "1000000",
+            "--pack",
+            "${workspaceFolder}/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"
+        ],
+        "problemMatcher": [],
+        "group": "build",
+        "dependsOn": "⚡ Fast Incremental Build (Windows)",
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "🧹 Fast Build: Clean (Windows)",
+        "type": "shell",
+        "command": "powershell.exe",
+        "args": [
+            "-Command",
+            "if (Test-Path 'build_fast') { Remove-Item -Recurse -Force 'build_fast' }; Write-Host 'Fast build directory cleaned!'"
+        ],
+        "group": "build",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": false,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "Fast Memory Usage Analysis (Windows)",
+        "type": "shell",
+        "command": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-size.exe",
+        "args": [
+            "-A",
+            "${workspaceFolder}/build_fast/BT_PassThroughFT.elf"
+        ],
+        "group": "test",
+        "dependsOn": "⚡ Fast Incremental Build (Windows)",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": true,
+            "panel": "shared"
+        }
+    },
+    {
+        "label": "Memory Usage Analysis (Windows)",
+        "type": "shell",
+        "command": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-size.exe",
+        "args": [
+            "-A",
+            "${workspaceFolder}/build/BT_PassThroughFT.elf"
+        ],
+        "group": "test",
+        "dependsOn": "Build: CMake Default (Windows)",
+        "problemMatcher": [],
+        "presentation": {
+            "echo": true,
+            "reveal": "always",
+            "focus": true,
+            "panel": "shared"
+        }
+    }
+]
 }

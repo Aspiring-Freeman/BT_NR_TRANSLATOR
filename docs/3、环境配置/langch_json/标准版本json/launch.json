@@ -1,22 +1,14 @@
 {
-  // 本文件已加入 .gitignore，由各机器本地维护。
-  // cortex-debug 支持 windows / linux / osx 字段在同一配置中按当前 OS 自动覆盖，
-  // 因此只需保留一份 Launch / Attach 配置即可跨平台 F5。
-  // 各平台默认路径如下，若本机工具链不同，请就地修改对应 OS 段即可。
   "version": "0.2.0",
   "configurations": [
     {
-      // F5 一键工作流：
-      // 1) preLaunchTask 用 pyOCD CLI 完成 build + flash（CLI 路径下 target 识别正确，
-      //    不触发 gdbserver vFlash 的 "Error finishing flash operation"）。
-      // 2) cortex-debug 接着自己启动 pyocd 作为 gdbserver（无需再手动跑 GDB Server 任务）。
-      // 3) GDB attach 上去后只做 monitor reset halt，runToEntryPoint 跑到 main 停下。
-      "name": "BT_NR_TRANSLATOR (fm33le01x) 一键编译烧录调试 (Auto)",
+      // 标准的 Launch 一键烧录调试流程
+      "name": "BT_NR_TRANSLATOR (fm33le01x) 标准一键调试 (Launch)",
       "cwd": "${workspaceFolder}",
       "executable": "${workspaceFolder}/build/BT_PassThroughFT.elf",
-      "request": "attach",
+      "request": "launch", // 1. 更改为标准的 launch 模式
       "type": "cortex-debug",
-      "runToEntryPoint": "main",
+      "runToEntryPoint": "main", // 2. 告诉插件：启动后自动跑到 main 并停下
       "servertype": "pyocd",
       "targetId": "fm33le01x",
       "showDevDebugOutput": "raw",
@@ -24,16 +16,7 @@
       "swoConfig": {
         "enabled": false
       },
-      "overrideAttachCommands": [
-        "monitor reset halt", // 1. 复位并挂起芯片
-        "tbreak main", // 2. 在 main 函数入口设一个临时断点（一次性断点）
-        "continue" // 3. 让程序全速运行，直到撞上 main 的断点停下
-      ],
-      "overrideRestartCommands": [
-        "monitor reset halt", // 1. 复位并挂起芯片
-        "tbreak main", // 2. 在 main 函数入口设一个临时断点（一次性断点）
-        "continue" // 3. 让程序全速运行，直到撞上 main 的断点停下
-      ],
+      // 3. 删除了手写的复位跳转指令，完全交给插件原生、安全地打断点和复位
       "rttConfig": {
         "enabled": true,
         "address": "auto",
@@ -49,7 +32,7 @@
         ]
       },
       "liveWatch": {
-        "enabled": false,
+        "enabled": true,
         "samplesPerSecond": 4
       },
       "serverArgs": [
@@ -62,7 +45,7 @@
         "armToolchainPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin",
         "gdbPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe",
         "serverpath": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
-        "preLaunchTask": "PyOCD: Flash (Windows)"
+        "preLaunchTask": "PyOCD: Flash (Windows)" // 标准模式下，您也可以将此任务简化为仅编译（如 Build），而把烧录交给 GDB 自动完成。
       },
       "linux": {
         "armToolchainPath": "/usr/bin",
@@ -125,7 +108,7 @@
       "windows": {
         "armToolchainPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin",
         "gdbPath": "C:/Program Files (x86)/GNU Arm Embedded Toolchain/10 2021.10/bin/arm-none-eabi-gdb.exe",
-        "serverpath": "D:/work/python/pyocd/venv/Scripts/pyocd.exe",
+        "serverpath": "D:/work/python/pyocd/venv/Scripts/pyocd.exe" // 这里为您补上了 windows 下缺失的 serverpath
       },
       "linux": {
         "armToolchainPath": "/usr/bin",

@@ -32,9 +32,9 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # -----------------------------------------------------------------------------
 # 配置参数（可根据项目调整）
 # -----------------------------------------------------------------------------
-TARGET="FM33LG04x"                                              # PyOCD 的目标芯片名
+TARGET="fm33le01x"                                              # PyOCD 的目标芯片名
 FREQUENCY="1000000"                                             # SWD 时钟频率 (Hz)
-PACK_FILE="$PROJECT_DIR/VscodeGcc/FMSH.FM33LG0XX_DFP.3.0.1.pack"  # CMSIS-Pack 文件
+PACK_FILE="$PROJECT_DIR/VscodeGcc/FM33LE0XX_DFP.1.0.2.pack"     # CMSIS-Pack 文件
 PORT="3333"                                                     # GDB Server 端口
 TELNET_PORT="4444"                                              # PyOCD telnet 控制端口
 LOG_FILE="$SCRIPT_DIR/pyocd_server.log"                         # PyOCD 输出日志
@@ -438,7 +438,7 @@ print_success_message() {
     echo "  下一步可以："
     echo "    • 在 VSCode 中按 F5 开始调试"
     echo "    • 或命令行启动 GDB:"
-    echo "        arm-none-eabi-gdb $PROJECT_DIR/build/your_firmware.elf"
+    echo "        arm-none-eabi-gdb $PROJECT_DIR/build/BT_PassThroughFT.elf"
     echo "        (gdb) target remote localhost:$PORT"
     echo
     echo "  管理命令："
@@ -454,7 +454,7 @@ print_success_message() {
 # 把 main 单独写成函数，让脚本结构更清晰，也方便以后调用
 main() {
     echo "=========================================="
-    echo "  FM33LG04x Debug Helper (健壮版)"
+    echo "  BT_NR_TRANSLATOR (fm33le01x) Debug Helper"
     echo "=========================================="
 
     check_dependencies

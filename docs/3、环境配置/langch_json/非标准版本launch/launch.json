@@ -49,7 +49,7 @@
         ]
       },
       "liveWatch": {
-        "enabled": false,
+        "enabled": true,
         "samplesPerSecond": 4
       },
       "serverArgs": [

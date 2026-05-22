@@ -14,7 +14,7 @@
  *===========================================================================*/
 #define SOFTWARE_VERSION_MAJOR 1
 #define SOFTWARE_VERSION_MINOR 0
-#define SOFTWARE_VERSION_PATCH 7
+#define SOFTWARE_VERSION_PATCH 2
 /* 版本字符串自动由上面三个数字拼成,改版本只需改 MAJOR/MINOR/PATCH */
 #define _SW_VER_STR(x) #x
 #define _SW_VER_XSTR(x) _SW_VER_STR(x)
